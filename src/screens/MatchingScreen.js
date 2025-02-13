@@ -4,6 +4,7 @@ import Card from "../components/FindBuddyCard/card";
 import users from "../../assets/TinderAssets/assets/data/users";
 import Animated, {useAnimatedGestureHandler, useSharedValue, useAnimatedStyle, withSpring, useDerivedValue, interpolate } from "react-native-reanimated";
 import { PanGestureHandler, } from "react-native-gesture-handler";
+
 export default function MatchingScreen({ navigation }) {
 
   const { width: screenWidth } = useWindowDimensions()
