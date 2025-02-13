@@ -1,22 +1,49 @@
 import { StatusBar } from "expo-status-bar";
-import { StyleSheet, Text, View, Button, Image, ImageBackground } from "react-native";
-
+import { Pressable, StyleSheet, View, Text, useWindowDimensions} from "react-native";
+import Card from "../components/FindBuddyCard/card";
+import users from "../../assets/TinderAssets/assets/data/users";
+import Animated, {useAnimatedGestureHandler, useSharedValue, useAnimatedStyle, withSpring, useDerivedValue, interpolate } from "react-native-reanimated";
+import { PanGestureHandler, } from "react-native-gesture-handler";
 export default function MatchingScreen({ navigation }) {
+
+  const { width: screenWidth } = useWindowDimensions()
+
+  const translateX = useSharedValue(0)
+  const rotate = useDerivedValue(()=> interpolate(translateX.value, [0, screenWidth], [0, 60]) + 'deg')
+  const cardStyle = useAnimatedStyle(()=> ({
+    transform: [{
+      translateX: translateX.value,
+    },
+    {
+      rotate: rotate.value
+    }
+  ],
+  })); 
+
+  const gestureHandler = useAnimatedGestureHandler({
+    onStart: (_, context )=>{
+      context.startX = translateX.value;
+      // console.warn("onStart")
+    },
+    onActive: (event, context) =>{
+      translateX.value = context.startX + event.translationX
+      // console.log("Touch x: ", event.translationX)
+    },
+    onEnd: () => {
+      console.warn('Touch End')
+    }
+  });
   return (
     <View style={styles.pageContainer}>
-        <View style={styles.card}>
-            <ImageBackground
-                source={{
-                uri: 'https://notjustdev-dummy.s3.us-east-2.amazonaws.com/avatars/elon.png',
-                }}
-                style={styles.image}>
-                <View style={styles.cardInner}>
-                    <Text style={styles.name}>Elon Musk</Text>
-                    <Text style={styles.bio}>'A dude with a rocket is looking for a gal with fuel'</Text>
-                </View>
-                </ImageBackground>
-        </View>
-        
+      <PanGestureHandler onGestureEvent={gestureHandler}>
+        <Animated.View style={[styles.animatedCard, cardStyle]}>
+          <Card user={users[2]} />
+        </Animated.View>
+      </PanGestureHandler>
+      
+      {/* <Pressable onPress={() => sharedValue.value = withSpring(Math.random())}>
+          <Text>Change Value</Text>
+      </Pressable> */}
         {/* <Button title="Go to tracking"
             onPress={() => navigation.navigate("TrackingScreen")} /> */}
     </View>
@@ -30,39 +57,10 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  card:{
-    width: '95%',
-    height: '70%',
-    borderRadius: 10,
-    shadowColor:"#000000",
-    shadowOffset: {
-    width: 0,
-    height: 5,
-    },
-    shadowOpacity: 1,
-    shadowRadius: 15,
-    elevation: 10
-  },
-  cardInner:{
-    padding: 10,
-  },
-  image: {
-    width: '100%',
-    height: '100%',
-    borderRadius: 10,
-    overflow: 'hidden',
+  animatedCard:{
+    width: '100%', 
+    justifyContent: "center",
+    alignItems: "center",
 
-    justifyContent: 'flex-end',
-
-  },
-  name:{
-    fontSize: 30,
-    color: 'white',
-    fontWeight: 'bold',
-  },
-  bio:{
-    fontSize: 18,
-    color: 'white',
-    lineHeight: 25,
   }
 });
