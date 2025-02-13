@@ -1,46 +1,29 @@
-import { StatusBar } from "expo-status-bar";
-import { Pressable, StyleSheet, View, Text, useWindowDimensions} from "react-native";
+import { StyleSheet, View} from "react-native";
 import Card from "../components/FindBuddyCard/card";
 import users from "../../assets/TinderAssets/assets/data/users";
-import Animated, {useAnimatedGestureHandler, useSharedValue, useAnimatedStyle, withSpring, useDerivedValue, interpolate } from "react-native-reanimated";
-import { PanGestureHandler, } from "react-native-gesture-handler";
+import AnimatedStack from "../components/AnimatedStack/AniStack";
 
 export default function MatchingScreen({ navigation }) {
 
-  const { width: screenWidth } = useWindowDimensions()
+  const onSwipeLeft = (user) =>{
+    console.warn("SwipeLeft", user.name)
+  }
 
-  const translateX = useSharedValue(0)
-  const rotate = useDerivedValue(()=> interpolate(translateX.value, [0, screenWidth], [0, 60]) + 'deg')
-  const cardStyle = useAnimatedStyle(()=> ({
-    transform: [{
-      translateX: translateX.value,
-    },
-    {
-      rotate: rotate.value
-    }
-  ],
-  })); 
+  const onSwipeRight = (user) =>{
+    console.warn("SwipeRight", user.name)
+  }
 
-  const gestureHandler = useAnimatedGestureHandler({
-    onStart: (_, context )=>{
-      context.startX = translateX.value;
-      // console.warn("onStart")
-    },
-    onActive: (event, context) =>{
-      translateX.value = context.startX + event.translationX
-      // console.log("Touch x: ", event.translationX)
-    },
-    onEnd: () => {
-      console.warn('Touch End')
-    }
-  });
   return (
     <View style={styles.pageContainer}>
-      <PanGestureHandler onGestureEvent={gestureHandler}>
-        <Animated.View style={[styles.animatedCard, cardStyle]}>
-          <Card user={users[2]} />
-        </Animated.View>
-      </PanGestureHandler>
+      
+      <AnimatedStack 
+        data={users}
+        renderItem={({item}) => <Card user={item}/>}
+        onSwipeLeft={onSwipeLeft}
+        onSwipeRight={onSwipeRight}
+      />
+
+     
       
       {/* <Pressable onPress={() => sharedValue.value = withSpring(Math.random())}>
           <Text>Change Value</Text>
@@ -58,10 +41,4 @@ const styles = StyleSheet.create({
     justifyContent: "center",
     alignItems: "center",
   },
-  animatedCard:{
-    width: '100%', 
-    justifyContent: "center",
-    alignItems: "center",
-
-  }
 });
