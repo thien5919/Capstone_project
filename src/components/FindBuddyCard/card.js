@@ -32,7 +32,7 @@ const styles = StyleSheet.create({
       shadowOpacity: 1,
       shadowRadius: 15,
       elevation: 10,
-      backgroundColor: '#FAF0D7'
+      backgroundColor: '#fff'
     },
     cardInner:{
       padding: 10,

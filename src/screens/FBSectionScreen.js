@@ -1,6 +1,6 @@
 import { StatusBar } from 'expo-status-bar';
 import { StyleSheet, Text, View, Button, TouchableOpacity  } from 'react-native';
-
+import FindBudScreen from './FindBuddiesScreen/FindBudScreen';
 export default function FBSectionScreen({navigation}) {
   return (
     <View style={styles.container}>
@@ -23,7 +23,7 @@ export default function FBSectionScreen({navigation}) {
     {/* Find Buddies Card */}
     <TouchableOpacity
       style={styles.card}
-      onPress={() => navigation.navigate("MatchingScreen")} 
+      onPress={() => navigation.navigate("FindBudScreen")} 
     >
       <Text style={styles.cardTitle}>Find Buddies 🎉</Text>
       <Text style={styles.cardDescription}>

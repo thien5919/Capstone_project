@@ -107,7 +107,7 @@ export default function AnimatedStack(props) {
 const styles = StyleSheet.create({
   root: {
     flex: 1, 
-    backgroundColor: "#FAF0D7", 
+    backgroundColor: "#fff", 
     justifyContent: "center",
     alignItems: "center",
     width: '100%',
