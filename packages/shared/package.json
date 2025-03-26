@@ -1,0 +1,5 @@
+{
+  "name": "shared",
+  "packageManager": "yarn@4.7.0",
+  "main": "index.js"
+}

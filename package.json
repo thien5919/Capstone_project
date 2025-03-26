@@ -1,0 +1,16 @@
+{
+  "name": "gymbuddiesapp",
+  "packageManager": "yarn@4.7.0",
+  "workspaces": [
+    "apps/*",
+    "packages/*"
+  ],
+  "devDependencies": {
+    "prettier": "^3.5.3"
+  },
+  "dependencies": {
+    "@react-native-firebase/app": "^21.12.2",
+    "@react-native-firebase/auth": "^21.12.2",
+    "@react-native-firebase/firestore": "^21.12.2"
+  }
+}
