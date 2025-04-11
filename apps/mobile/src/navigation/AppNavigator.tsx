@@ -1,38 +1,40 @@
-import React, { useEffect, useState } from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
-import auth, { FirebaseAuthTypes } from '@react-native-firebase/auth';
+import React from 'react';
+import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
+import MatchScreen from '../screens/main/MatchScreen';
+import ProfileScreen from '../screens/main/ProfileScreen';
+// import ChatStack from './ChatStack';
+import ChallengeScreen from '../screens/main/ChallengeScreen';
+import FeaturesScreen from '../screens/main/FeaturesScreen';
+import Ionicons from 'react-native-vector-icons/Ionicons';
 
-import BottomTabNavigator from './BottomNavigator';
-import LoginScreen from '../screens/auth/LoginScreen';
-
-const Stack = createNativeStackNavigator();
+const Tab = createBottomTabNavigator();
 
 const AppNavigator = () => {
-  const [user, setUser] = useState<FirebaseAuthTypes.User | null>(null);
-  const [initializing, setInitializing] = useState(true);
-
-  useEffect(() => {
-    const unsubscribe = auth().onAuthStateChanged(currentUser => {
-      setUser(currentUser);
-      if (initializing) setInitializing(false);
-    });
-
-    return unsubscribe;
-  }, []);
-
-  if (initializing) return null; // or return a SplashScreen
-
   return (
-    <NavigationContainer>
-      <Stack.Navigator screenOptions={{ headerShown: false }}>
-        {user ? (
-          <Stack.Screen name="Main" component={BottomTabNavigator} />
-        ) : (
-          <Stack.Screen name="Login" component={LoginScreen} options={{ headerShown: false}} />
-        )}
-      </Stack.Navigator>
-    </NavigationContainer>
+    <Tab.Navigator
+      screenOptions={({ route }) => ({
+        tabBarIcon: ({ color, size }) => {
+          const icons: { [key: string]: string } = {
+            Match: 'people-outline',
+            Notifications: 'star-outline',
+            Challenge: 'trophy-outline',
+            Chats: 'chatbubble-outline',
+            Profile: 'person-outline',
+          };
+          return <Ionicons name={icons[route.name]} size={size} color={color} />;
+        },
+        tabBarActiveTintColor: 'tomato',
+        tabBarInactiveTintColor: 'gray',
+        tabBarStyle: { backgroundColor: '#121212' },
+        headerShown: false,
+      })}
+    >
+      <Tab.Screen name="Match" component={MatchScreen} />
+      <Tab.Screen name="Features" component={FeaturesScreen} />
+      <Tab.Screen name="Notifications" component={ChallengeScreen} />
+      <Tab.Screen name="Chats" component={FeaturesScreen} />     
+      <Tab.Screen name="Profile" component={ProfileScreen} />
+    </Tab.Navigator>
   );
 };
 

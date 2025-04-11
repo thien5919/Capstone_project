@@ -2,6 +2,8 @@ apply plugin: "com.android.application"
 apply plugin: "org.jetbrains.kotlin.android"
 apply plugin: 'com.google.gms.google-services'
 apply plugin: "com.facebook.react"
+apply from: "../../node_modules/react-native-vector-icons/fonts.gradle"
+
 
 /**
  * This is the configuration block to customize your React Native Android app.
@@ -78,7 +80,7 @@ android {
     buildToolsVersion rootProject.ext.buildToolsVersion
     compileSdk rootProject.ext.compileSdkVersion
 
-    namespace "com.mobile"
+    namespace "com.gymbuddiesapp.mobile"
     defaultConfig {
         applicationId "com.gymbuddiesapp.mobile"
         minSdkVersion rootProject.ext.minSdkVersion

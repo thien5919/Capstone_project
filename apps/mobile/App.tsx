@@ -1,22 +1,34 @@
+import 'react-native-gesture-handler';
 import React from 'react';
-import { NavigationContainer } from '@react-navigation/native';
-import { createNativeStackNavigator } from '@react-navigation/native-stack';
+import { GestureHandlerRootView, Text } from 'react-native-gesture-handler';
 
-import LoginScreen from './src/screens/auth/LoginScreen';
 
-export type RootStackParamList = {
-  Login: undefined;
-};
-
-const Stack = createNativeStackNavigator<RootStackParamList>();
+import { AuthProvider } from './src/context/AuthContext';
+import { RegistrationProvider } from './src/context/RegistrationContext';
+import { UserProvider } from './src/context/UserContext';
+import RootNavigator from './src/navigation/RootNavigator';
+import { ThemeProvider } from './src/context/ThemeContext';
+import { ChatProvider } from './src/context/ChatContext';
+import { NotificationProvider } from './src/context/NotificationContext';
 
 const App: React.FC = () => {
   return (
-    <NavigationContainer>
-      <Stack.Navigator initialRouteName="Login">
-        <Stack.Screen name="Login" component={LoginScreen} />
-      </Stack.Navigator>
-    </NavigationContainer>
+    <GestureHandlerRootView style={{ flex: 1 }}>
+      <AuthProvider>
+        <RegistrationProvider>
+          <UserProvider>       
+            <NotificationProvider>     
+              <ChatProvider>           
+                <ThemeProvider>        
+                    <RootNavigator />                 
+                </ThemeProvider>
+              </ChatProvider>
+            </NotificationProvider>          
+          </UserProvider>
+        </RegistrationProvider>         
+      </AuthProvider> 
+      
+    </GestureHandlerRootView>
   );
 };
 
