@@ -1,45 +1,62 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-import { Message } from '../types';
+import React, {createContext, useContext, useEffect, useState} from "react";
+import {sendMessage, listenForMessages} from "../services/firebase";
+import database from "@react-native-firebase/database";
+
+interface Message {
+    id: string;
+    text: string;
+    senderId: string;
+    timestamp: number;
+}
 
 interface ChatContextType {
-  currentMatchId: string | null;
-  messages: Message[];
-  setCurrentMatch: (matchId: string) => void;
-  sendMessage: (text: string) => void;
+    messages: Message[];
+    send: (matchId: string, message: Message) => Promise<void>;
+    startListening: (matchId: string) => void;
+    stopListening: (matchId: string) => void;
 }
 
 const ChatContext = createContext<ChatContextType | undefined>(undefined);
 
-export const ChatProvider = ({ children }: { children: ReactNode }) => {
-  const [currentMatchId, setCurrentMatchId] = useState<string | null>(null);
-  const [messages, setMessages] = useState<Message[]>([]);
+export const ChatProvider = ({children}: {children: React.ReactNode}) => {
+    const [messages, setMessages] = useState<Message[]>([]);
+    const [listeners, setListeners] = useState<{[matchId: string]: () => void}>({});
 
-  const setCurrentMatch = (matchId: string) => {
-    setCurrentMatchId(matchId);
-    setMessages([]); // Clear messages when changing match (you can fetch new ones here)
-  };
-
-  const sendMessage = (text: string) => {
-    const newMessage: Message = {
-      id: Date.now().toString(),
-      sender: 'me', // Replace with actual user UID
-      text,
-      timestamp: new Date(),
+    const send = async (matchId: string, message: Message) => {
+        await sendMessage(matchId, message);
     };
-    setMessages((prev) => [...prev, newMessage]);
-  };
 
-  return (
-    <ChatContext.Provider
-      value={{ currentMatchId, messages, setCurrentMatch, sendMessage }}
-    >
-      {children}
-    </ChatContext.Provider>
-  );
+    const startListening = (matchId: string) => {
+        if (listeners[matchId]) return;
+        const unsub = listenForMessages(matchId, (msgs) => setMessages(msgs));
+        setListeners((prev) => ({
+            ...prev,
+            [matchId]: () =>
+                database().ref(`/messages/${matchId}`).off("value", unsub),
+        }));
+    };
+
+    const stopListening = (matchId: string) => {
+        if (listeners[matchId]) {
+            listeners[matchId]();
+            setListeners((prev) => {
+                const {[matchId]: _, ...rest} = prev;
+                return rest;
+            });
+        }
+    };
+
+    return (
+        <ChatContext.Provider value={{messages, send, startListening, stopListening}}>
+            {children}
+        </ChatContext.Provider>
+    );
 };
 
 export const useChat = (): ChatContextType => {
-  const context = useContext(ChatContext);
-  if (!context) throw new Error('useChat must be used within ChatProvider');
-  return context;
+    const context = useContext(ChatContext);
+    if (!context) {
+        throw new Error("useChat must be used within a ChatProvider");
+    }
+    return context;
 };

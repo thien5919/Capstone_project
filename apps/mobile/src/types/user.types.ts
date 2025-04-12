@@ -1,4 +1,4 @@
-export type Gender = 'male' | 'female' | 'prefer-not-to-say';
+export type Gender = 'male' | 'female' | '---';
 
 export interface AgeRange {
   min: number | null;
@@ -6,7 +6,7 @@ export interface AgeRange {
 }
 
 export interface MatchPreferences {
-  preferredGender: Gender | 'any' | null;
+  preferredGender: Gender;
   preferredAgeRange: AgeRange;
 }
 
@@ -33,3 +33,12 @@ export interface UserProfile {
   createdAt?: any;
   updatedAt?: any;
 }
+
+export type RegistrationData = Partial<Omit<UserProfile, 'uid' | 'createdAt' | 'updatedAt'>> & {
+  password?: string;
+};
+
+export type PublicUserProfile = Pick<
+  UserProfile,
+  'uid' | 'displayName' | 'photoUrl' | 'age' | 'gender' | 'description' | 'matchPreferences'
+>;

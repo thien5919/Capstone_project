@@ -1,74 +1,106 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button, Text, RadioButton } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform } from 'react-native';
+import { TextInput, Button } from 'react-native-paper';
+import { Picker } from '@react-native-picker/picker';
 import { useRegistration } from '../../context/RegistrationContext';
+import { useNavigation } from '@react-navigation/native';
+import { launchImageLibrary } from 'react-native-image-picker';
+import { Gender } from '../../types/user.types';
+import { NativeStackNavigationProp } from '@react-navigation/native-stack';
+import { SignUpStackParamList } from '../../navigation/types';
 
-export default function PersonalInfoScreen() {
-  const navigation = useNavigation();
+
+type SignUpNav = NativeStackNavigationProp<SignUpStackParamList, 'ProfileInfo'>;
+
+export default function ProfileInfoScreen() {
+  const navigation = useNavigation<SignUpNav>();
   const { updateRegistrationData } = useRegistration();
 
   const [displayName, setDisplayName] = useState('');
   const [age, setAge] = useState('');
-  const [gender, setGender] = useState('');
+  const [gender, setGender] = useState<Gender>('---');
   const [description, setDescription] = useState('');
+  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
+  const [error, setError] = useState<string | null>(null);
+  const DEFAULT_AVATAR = Image.resolveAssetSource(require('../../../assets/images/default.png')).uri;
+  const handlePickImage = async () => {
+    const result = await launchImageLibrary({ mediaType: 'photo' });
+    if (result.assets && result.assets.length > 0) {
+      setPhotoUrl(result.assets[0].uri || null);
+    }
+  };
 
   const handleNext = () => {
+    if (!displayName || !age || !gender) {
+      setError('Please fill out all required fields.');
+      return;
+    }
     updateRegistrationData({
       displayName,
       age: parseInt(age, 10),
       gender,
       description,
+      photoUrl: photoUrl || DEFAULT_AVATAR,
     });
-    navigation.navigate('MatchPreference' as never);
+    navigation.navigate('MatchPreference');
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.form}>
-        <Text style={styles.title}>Your Info</Text>
+        <Text style={styles.title}>Tell us about yourself</Text>
+        {error && <Text style={styles.error}>{error}</Text>}
 
         <TextInput
           label="Name"
           value={displayName}
           onChangeText={setDisplayName}
-          mode="outlined"
           style={styles.input}
         />
-
         <TextInput
           label="Age"
           value={age}
           onChangeText={setAge}
           keyboardType="numeric"
-          mode="outlined"
           style={styles.input}
         />
-
-        <Text style={styles.label}>Gender</Text>
-        <RadioButton.Group onValueChange={setGender} value={gender}>
-          <View style={styles.radioRow}>
-            <RadioButton value="male" /><Text>Male</Text>
-            <RadioButton value="female" /><Text>Female</Text>
-            <RadioButton value="non-binary" /><Text>Non-binary</Text>
-          </View>
-        </RadioButton.Group>
-
+       
+        <Text style={{ marginBottom: 6, marginTop: 8 }}>Gender</Text>
+        <Picker
+          selectedValue={gender}
+          onValueChange={(itemValue) => setGender(itemValue as Gender)}
+          style={{
+            marginBottom: 12,
+            backgroundColor: 'white',
+            borderRadius: 4,
+          }}>
+            <Picker.Item label="-- Select gender --" value="---" />
+            <Picker.Item label="Male" value="male" />
+            <Picker.Item label="Female" value="female" />
+            <Picker.Item label="Prefer not to say" value="prefer-not-to-say" />
+          </Picker>
         <TextInput
           label="Short Bio"
           value={description}
           onChangeText={setDescription}
-          mode="outlined"
           multiline
-          numberOfLines={4}
+          numberOfLines={3}
           style={styles.input}
         />
 
+        <TouchableOpacity onPress={handlePickImage} style={styles.avatarButton}>
+          {photoUrl ? (
+            <Image source={{ uri: photoUrl }} style={styles.avatar} />
+          ) : (
+            <Text style={styles.avatarText}>Select Avatar</Text>
+          )}
+        </TouchableOpacity>
+
         <Button mode="contained" onPress={handleNext} style={styles.button}>
-          Next
+          Continue
         </Button>
       </View>
     </KeyboardAvoidingView>
@@ -79,38 +111,39 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#f9fafb',
   },
   form: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 12,
-    elevation: 2,
+    marginHorizontal: 20,
   },
   title: {
-    fontSize: 24,
+    fontSize: 22,
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
   input: {
     marginBottom: 12,
-    backgroundColor: '#fff',
   },
-  label: {
-    marginBottom: 4,
-    fontWeight: '500',
+  avatarButton: {
+    alignItems: 'center',
+    marginBottom: 20,
+  },
+  avatar: {
+    width: 100,
+    height: 100,
+    borderRadius: 50,
+  },
+  avatarText: {
+    color: '#888',
     fontSize: 16,
   },
-  radioRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    marginBottom: 16,
-    alignItems: 'center',
-  },
   button: {
-    marginTop: 12,
-    backgroundColor: '#6366f1',
+    marginTop: 16,
+  },
+  error: {
+    color: 'red',
+    marginBottom: 12,
+    textAlign: 'center',
   },
 });

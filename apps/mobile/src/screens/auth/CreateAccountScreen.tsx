@@ -1,3 +1,5 @@
+// src/screens/auth/CreateAccountScreen.tsx
+
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
@@ -7,28 +9,33 @@ import { useRegistration } from '../../context/RegistrationContext';
 export default function CreateAccountScreen() {
   const navigation = useNavigation();
   const { updateRegistrationData } = useRegistration();
+
   const [email, setEmail] = useState('');
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
 
   const handleNext = () => {
+    if (!email || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
+      return;
+    }
     if (password !== confirmPassword) {
-      setError("Passwords don't match");
+      setError('Passwords do not match.');
       return;
     }
 
     updateRegistrationData({ email, password });
-    navigation.navigate('PersonalInfo' as never);
+    navigation.navigate('ProfileInfo' as never);
   };
 
   return (
     <KeyboardAvoidingView
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
       style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
     >
       <View style={styles.form}>
-        <Text style={styles.title}>Create Account</Text>
+        <Text variant="titleLarge" style={styles.title}>Create Your Account</Text>
 
         {error && <Text style={styles.error}>{error}</Text>}
 
@@ -36,25 +43,22 @@ export default function CreateAccountScreen() {
           label="Email"
           value={email}
           onChangeText={setEmail}
-          mode="outlined"
+          autoCapitalize="none"
+          keyboardType="email-address"
           style={styles.input}
         />
-
         <TextInput
           label="Password"
           value={password}
           onChangeText={setPassword}
           secureTextEntry
-          mode="outlined"
           style={styles.input}
         />
-
         <TextInput
           label="Confirm Password"
           value={confirmPassword}
           onChangeText={setConfirmPassword}
           secureTextEntry
-          mode="outlined"
           style={styles.input}
         />
 
@@ -70,18 +74,12 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     justifyContent: 'center',
-    paddingHorizontal: 24,
-    backgroundColor: '#F3F4F6',
+    backgroundColor: '#f9fafb',
   },
   form: {
-    backgroundColor: '#fff',
-    padding: 24,
-    borderRadius: 12,
-    elevation: 2,
+    marginHorizontal: 20,
   },
   title: {
-    fontSize: 24,
-    fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
   },
@@ -89,11 +87,10 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   button: {
-    marginTop: 12,
-    backgroundColor: '#6366f1',
+    marginTop: 16,
   },
   error: {
-    color: '#ef4444',
+    color: 'red',
     marginBottom: 12,
     textAlign: 'center',
   },

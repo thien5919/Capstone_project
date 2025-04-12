@@ -1,23 +1,8 @@
+// src/context/RegistrationContext.tsx
+
 import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-interface MatchPreferences {
-  preferredGender: string | null;
-  preferredAgeRange: {
-    min: number | null;
-    max: number | null;
-  };
-}
-
-interface RegistrationData {
-  email?: string;
-  password?: string;
-  displayName?: string;
-  age?: number;
-  gender?: string;
-  photoUrl?: string;
-  description?: string;
-  matchPreferences?: MatchPreferences;
-}
+import { MatchPreferences, RegistrationData } from '../types/user.types';
+import { mergePreferences } from '../components/mergePreferences/mergePreferences';
 
 interface RegistrationContextType {
   registrationData: RegistrationData;
@@ -36,22 +21,17 @@ export const RegistrationProvider = ({ children }: { children: ReactNode }) => {
         ...prev,
         ...data,
       };
-  
-     
+
       if (data.matchPreferences) {
-        updated.matchPreferences = {
-          preferredGender: data.matchPreferences.preferredGender ?? prev.matchPreferences?.preferredGender ?? null,
-          preferredAgeRange: {
-            min: data.matchPreferences.preferredAgeRange?.min ?? prev.matchPreferences?.preferredAgeRange?.min ?? null,
-            max: data.matchPreferences.preferredAgeRange?.max ?? prev.matchPreferences?.preferredAgeRange?.max ?? null,
-          },
-        };
+        updated.matchPreferences = mergePreferences(
+          prev.matchPreferences,
+          data.matchPreferences
+        );
       }
-  
+
       return updated;
     });
   };
-  
 
   const resetRegistrationData = () => setRegistrationData({});
 

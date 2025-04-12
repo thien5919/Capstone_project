@@ -1,11 +1,9 @@
 import React from 'react';
 import { NavigationContainer } from '@react-navigation/native';
 import { createNativeStackNavigator } from '@react-navigation/native-stack';
-
 import { useAuth } from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
-import MainAppNavigator from './AppNavigator';
-import { Text, View } from 'react-native';
+import AppNavigator from './AppNavigator';
 
 const Stack = createNativeStackNavigator();
 
@@ -14,12 +12,13 @@ export default function RootNavigator() {
 
   return (
     <NavigationContainer>
-      {isAuthenticated ? <MainAppNavigator /> : <AuthNavigator />}
-      
-
+      <Stack.Navigator screenOptions={{ headerShown: false }}>
+        {isAuthenticated ? (
+          <Stack.Screen name="App" component={AppNavigator} />
+        ) : (
+          <Stack.Screen name="Auth" component={AuthNavigator} />
+        )}
+      </Stack.Navigator>
     </NavigationContainer>
-    
-
-    
   );
 }

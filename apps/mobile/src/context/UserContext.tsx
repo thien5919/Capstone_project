@@ -1,77 +1,55 @@
-import React, { createContext, useContext, useState, ReactNode } from 'react';
-
-export interface UserProfile {
-  uid: string;
-  displayName: string;
-  age: number;
-  gender: string;
-  photoUrl?: string;
-  description?: string;
-  matchPreferences?: {
-    preferredGender: string | null;
-    preferredAgeRange: {
-      min: number | null;
-      max: number | null;
-    };
-  };
-  settings?: {
-    notifications?: {
-      matchAlerts: boolean;
-      messageAlerts: boolean;
-    };
-    accountPrivacy?: 'public' | 'private';
-  };
-}
-
-export interface Match {
-  id: string;
-  users: string[];
-  lastMessage?: string;
-  lastMessageTime?: any;
-}
-
-export interface Message {
-  sender: string;
-  text: string;
-  timestamp: any;
-}
-
-interface AppData {
-  profile: UserProfile | null;
-  matches: Match[];
-  messages: { [matchId: string]: Message[] };
-}
+import React, {createContext, useContext, useEffect, useState} from "react";
+import {getUserProfile, updateUserProfile, saveMatchPreference} from "../services/user.service";
+import {useAuth} from "./AuthContext";
 
 interface UserContextType {
-  appData: AppData;
-  setAppData: (data: AppData) => void;
-  clearAppData: () => void;
+    profile: any;
+    updateProfile: (data: any) => Promise<void>;
+    updateMatchPreference: (pref: any) => Promise<void>;
+    reloadProfile: () => Promise<void>;
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined);
 
-export const UserProvider = ({ children }: { children: ReactNode }) => {
-  const [appData, setAppDataState] = useState<AppData>({
-    profile: null,
-    matches: [],
-    messages: {},
-  });
+export const UserProvider = ({children}: {children: React.ReactNode}) => {
+    const {user} = useAuth();
+    const [profile, setProfile] = useState<any>(null);
 
-  const setAppData = (data: AppData) => setAppDataState(data);
-  const clearAppData = () =>
-    setAppDataState({ profile: null, matches: [], messages: {} });
+    useEffect(() => {
+        if (user?.uid) {
+            loadProfile();
+        }
+    }, [user]);
 
-  return (
-    <UserContext.Provider value={{ appData, setAppData, clearAppData }}>
-      {children}
-    </UserContext.Provider>
-  );
+    const loadProfile = async () => {
+        if (!user?.uid) return;
+        const data = await getUserProfile(user.uid);
+        setProfile(data);
+    };
+
+    const updateProfile = async (data: any) => {
+        if (!user?.uid) return;
+        await updateUserProfile(user.uid, data);
+        await loadProfile();
+    };
+
+    const updateMatchPreference = async (pref: any) => {
+        if (!user?.uid) return;
+        await saveMatchPreference(user.uid, pref);
+        await loadProfile();
+    };
+
+    return (
+        <UserContext.Provider value={{profile, updateProfile, updateMatchPreference, reloadProfile: loadProfile}}>
+            {children}
+        </UserContext.Provider>
+    );
 };
 
 export const useUser = (): UserContextType => {
-  const context = useContext(UserContext);
-  if (!context) {
-    throw new Error('useUser must be used within a UserProvider');
-  }
-  return context;
+    const context = useContext(UserContext);
+    if (!context) {
+        throw new Error("useUser must be used within a UserProvider");
+    }
+    return context;
 };
