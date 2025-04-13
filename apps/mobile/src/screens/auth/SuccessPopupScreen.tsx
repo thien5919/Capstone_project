@@ -1,18 +1,16 @@
 import React, { useEffect } from 'react';
-import { View, StyleSheet, Animated, Alert } from 'react-native';
+import { View, StyleSheet, Animated, Alert, Image } from 'react-native';
 import { Text } from 'react-native-paper';
 import Ionicons from 'react-native-vector-icons/Ionicons';
 import { useNavigation, NavigationProp } from '@react-navigation/native';
 import { RootStackParamList } from '../../navigation/types';
 
 import { register } from '../../services/auth.service';
-import { saveUserProfile } from '../../services/user.service';
+import auth from '@react-native-firebase/auth';
 import { useRegistration } from '../../context/RegistrationContext';
+import { saveUserProfile } from '../../services/user.service';
 
-
-import { Image } from 'react-native';
 import DEFAULT from '../../../assets/images/default.png';
-
 const DEFAULT_AVATAR = Image.resolveAssetSource(DEFAULT).uri;
 
 export default function SuccessPopupScreen() {
@@ -36,30 +34,27 @@ export default function SuccessPopupScreen() {
           return;
         }
 
-       
-        const userCredential = await register(email, password);
-        const uid = userCredential.user.uid;
+        await register(email, password);
+        const currentUser = auth().currentUser;
+        if (!currentUser) throw new Error('User not found after registration');
 
-      
-        await saveUserProfile(uid, {
-          uid,
+        await saveUserProfile(currentUser.uid, {
+          uid: currentUser.uid,
           email,
-          displayName: registrationData.displayName ?? 'Anonymous',
-          age: registrationData.age ?? 18,
-          gender: registrationData.gender ?? '---',
-          photoUrl: registrationData.photoUrl ?? DEFAULT_AVATAR,
-          description: registrationData.description ?? '',
-          matchPreferences: registrationData.matchPreferences ?? {
+          displayName: profile.displayName ?? 'Anonymous',
+          age: profile.age ?? 18,
+          gender: profile.gender ?? '---',
+          photoUrl: profile.photoUrl ?? DEFAULT_AVATAR,
+          description: profile.description ?? '',
+          matchPreferences: profile.matchPreferences ?? {
             preferredGender: '---',
             preferredAgeRange: { min: null, max: null },
           },
-          settings: registrationData.settings,
           createdAt: new Date(),
           updatedAt: new Date(),
         });
-        
 
-     
+        navigation.navigate('App');
       } catch (err: any) {
         console.error('Registration error:', err);
         Alert.alert('Registration Failed', err.message || 'Unexpected error');

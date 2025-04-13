@@ -1,149 +1,111 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, Text, TouchableOpacity, Image, KeyboardAvoidingView, Platform } from 'react-native';
-import { TextInput, Button } from 'react-native-paper';
-import { Picker } from '@react-native-picker/picker';
-import { useRegistration } from '../../context/RegistrationContext';
+import { View, StyleSheet, ScrollView } from 'react-native';
+import { TextInput, Button, Text, RadioButton } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
-import { launchImageLibrary } from 'react-native-image-picker';
+import { useRegistration } from '../../context/RegistrationContext';
+import { Alert } from 'react-native';
 import { Gender } from '../../types/user.types';
-import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-import { SignUpStackParamList } from '../../navigation/types';
-
-
-type SignUpNav = NativeStackNavigationProp<SignUpStackParamList, 'ProfileInfo'>;
 
 export default function ProfileInfoScreen() {
-  const navigation = useNavigation<SignUpNav>();
+  const navigation = useNavigation();
   const { updateRegistrationData } = useRegistration();
-
+  
   const [displayName, setDisplayName] = useState('');
   const [age, setAge] = useState('');
   const [gender, setGender] = useState<Gender>('---');
   const [description, setDescription] = useState('');
-  const [photoUrl, setPhotoUrl] = useState<string | null>(null);
-  const [error, setError] = useState<string | null>(null);
-  const DEFAULT_AVATAR = Image.resolveAssetSource(require('../../../assets/images/default.png')).uri;
-  const handlePickImage = async () => {
-    const result = await launchImageLibrary({ mediaType: 'photo' });
-    if (result.assets && result.assets.length > 0) {
-      setPhotoUrl(result.assets[0].uri || null);
-    }
-  };
 
   const handleNext = () => {
-    if (!displayName || !age || !gender) {
-      setError('Please fill out all required fields.');
-      return;
+    const parsedAge = parseInt(age);
+    if (!displayName || isNaN(parsedAge)) {
+      return Alert.alert('Please fill out all required fields.');
     }
+
     updateRegistrationData({
       displayName,
-      age: parseInt(age, 10),
+      age: parsedAge,
       gender,
       description,
-      photoUrl: photoUrl || DEFAULT_AVATAR,
     });
-    navigation.navigate('MatchPreference');
+
+    navigation.navigate('MatchPreference' as never);
   };
 
   return (
-    <KeyboardAvoidingView
-      style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : undefined}
-    >
-      <View style={styles.form}>
-        <Text style={styles.title}>Tell us about yourself</Text>
-        {error && <Text style={styles.error}>{error}</Text>}
+    <ScrollView contentContainerStyle={styles.container}>
+      <Text style={styles.title}>Tell us about yourself</Text>
 
-        <TextInput
-          label="Name"
-          value={displayName}
-          onChangeText={setDisplayName}
-          style={styles.input}
-        />
-        <TextInput
-          label="Age"
-          value={age}
-          onChangeText={setAge}
-          keyboardType="numeric"
-          style={styles.input}
-        />
-       
-        <Text style={{ marginBottom: 6, marginTop: 8 }}>Gender</Text>
-        <Picker
-          selectedValue={gender}
-          onValueChange={(itemValue) => setGender(itemValue as Gender)}
-          style={{
-            marginBottom: 12,
-            backgroundColor: 'white',
-            borderRadius: 4,
-          }}>
-            <Picker.Item label="-- Select gender --" value="---" />
-            <Picker.Item label="Male" value="male" />
-            <Picker.Item label="Female" value="female" />
-            <Picker.Item label="Prefer not to say" value="prefer-not-to-say" />
-          </Picker>
-        <TextInput
-          label="Short Bio"
-          value={description}
-          onChangeText={setDescription}
-          multiline
-          numberOfLines={3}
-          style={styles.input}
-        />
+      <TextInput
+        label="Display Name"
+        value={displayName}
+        onChangeText={setDisplayName}
+        style={styles.input}
+      />
+      <TextInput
+        label="Age"
+        value={age}
+        onChangeText={setAge}
+        keyboardType="number-pad"
+        style={styles.input}
+      />
+      <Text style={styles.label}>Gender</Text>
+      <RadioButton.Group onValueChange={(value) => setGender(value as Gender)} value= {gender}>
+        <View style={styles.radioRow}>
+          <RadioButton value="male" />
+          <Text>Male</Text>
+        </View>
+        <View style={styles.radioRow}>
+          <RadioButton value="female" />
+          <Text>Female</Text>
+        </View>
+        <View style={styles.radioRow}>
+          <RadioButton value="other" />
+          <Text>Other</Text>
+        </View>
+      </RadioButton.Group>
 
-        <TouchableOpacity onPress={handlePickImage} style={styles.avatarButton}>
-          {photoUrl ? (
-            <Image source={{ uri: photoUrl }} style={styles.avatar} />
-          ) : (
-            <Text style={styles.avatarText}>Select Avatar</Text>
-          )}
-        </TouchableOpacity>
+      <TextInput
+        label="Short Bio"
+        value={description}
+        onChangeText={setDescription}
+        multiline
+        numberOfLines={3}
+        style={styles.input}
+      />
 
-        <Button mode="contained" onPress={handleNext} style={styles.button}>
-          Continue
-        </Button>
-      </View>
-    </KeyboardAvoidingView>
+      <Button mode="contained" onPress={handleNext} style={styles.button}>
+        Next
+      </Button>
+    </ScrollView>
   );
 }
 
 const styles = StyleSheet.create({
   container: {
-    flex: 1,
-    justifyContent: 'center',
-    backgroundColor: '#f9fafb',
-  },
-  form: {
-    marginHorizontal: 20,
+    padding: 20,
+    paddingBottom: 40,
   },
   title: {
     fontSize: 22,
+    marginBottom: 20,
     fontWeight: 'bold',
-    marginBottom: 16,
     textAlign: 'center',
   },
   input: {
-    marginBottom: 12,
+    marginBottom: 16,
   },
-  avatarButton: {
-    alignItems: 'center',
-    marginBottom: 20,
-  },
-  avatar: {
-    width: 100,
-    height: 100,
-    borderRadius: 50,
-  },
-  avatarText: {
-    color: '#888',
+  label: {
+    marginTop: 8,
+    marginBottom: 4,
     fontSize: 16,
+    fontWeight: '500',
+  },
+  radioRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    marginBottom: 8,
   },
   button: {
-    marginTop: 16,
-  },
-  error: {
-    color: 'red',
-    marginBottom: 12,
-    textAlign: 'center',
+    marginTop: 24,
   },
 });

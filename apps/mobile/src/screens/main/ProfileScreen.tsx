@@ -1,83 +1,57 @@
 import React from 'react';
-import { View, Text, StyleSheet, Image, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Button, ActivityIndicator } from 'react-native';
 import { useUser } from '../../context/UserContext';
+import { useAuth } from '../../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const ProfileScreen = () => {
-  const { profile } = useUser();
-
-  if (!profile) {
-    return (
-      <View style={styles.centered}>
-        <Text>Loading profile...</Text>
-      </View>
-    );
-  }
+  const { userProfile } = useUser();
+  const { logoutUser } = useAuth();
 
   return (
-   <SafeAreaView>
-    <ScrollView>
-      <ProfileHeader></ProfileHeader>
-      <View>
-        <View>
-          <Text>About Me</Text>
-          <Text></Text>
+    <SafeAreaView style={styles.fullscreen}>
+      {userProfile ? (
+        <>
+          {/* Hiển thị nội dung hồ sơ */}
+          <Text style={styles.title}>Hello, {userProfile.displayName}</Text>
+          {/* ... */}
+        </>
+      ) : (
+        <View style={styles.centered}>
+          <ActivityIndicator size="large" color="#10B981" />
+          <Text style={{ marginTop: 12 }}>Loading profile...</Text>
         </View>
+      )}
+
+      {/* 🔒 Log Out luôn xuất hiện ở cuối */}
+      <View style={styles.logoutContainer}>
+        <Button title="Log Out" color="#EF4444" onPress={logoutUser} />
       </View>
-      
-    </ScrollView>
-   </SafeAreaView>
+    </SafeAreaView>
   );
 };
 
 export default ProfileScreen;
 
 const styles = StyleSheet.create({
-  container: {
-    padding: 24,
-    alignItems: 'center',
+  fullscreen: {
+    flex: 1,
+    justifyContent: 'space-between',
+    backgroundColor: '#fff',
   },
   centered: {
     flex: 1,
-    justifyContent: 'center',
     alignItems: 'center',
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    marginBottom: 16,
-  },
-  avatarPlaceholder: {
-    width: 120,
-    height: 120,
-    borderRadius: 60,
-    backgroundColor: '#ccc',
     justifyContent: 'center',
-    alignItems: 'center',
-    marginBottom: 16,
   },
-  avatarText: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    color: '#fff',
+  logoutContainer: {
+    borderTopWidth: 1,
+    borderColor: '#E5E7EB',
+    padding: 16,
+    backgroundColor: '#fff',
   },
-  name: {
-    fontSize: 22,
-    fontWeight: 'bold',
-    marginBottom: 8,
-  },
-  info: {
-    fontSize: 16,
-    marginBottom: 4,
-  },
-  section: {
-    marginTop: 20,
-    width: '100%',
-  },
-  sectionTitle: {
-    fontSize: 18,
-    fontWeight: '600',
-    marginBottom: 8,
+  title: {
+    fontSize: 20,
+    padding: 20,
   },
 });

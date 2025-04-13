@@ -1,17 +1,29 @@
-import { auth } from './firebase';
+// src/services/auth.service.ts
 
+import auth from '@react-native-firebase/auth';
+
+/**
+ * Register a user with email and password using Firebase Authentication
+ * @param email User email
+ * @param password User password
+ * @returns Firebase user credential
+ */
 export const register = async (email: string, password: string) => {
-  return await auth().createUserWithEmailAndPassword(email, password);
+  const userCredential = await auth().createUserWithEmailAndPassword(email, password);
+  return userCredential;
 };
 
+/**
+ * Sign in with email and password
+ */
 export const login = async (email: string, password: string) => {
-  return await auth().signInWithEmailAndPassword(email, password);
+  const userCredential = await auth().signInWithEmailAndPassword(email, password);
+  return userCredential;
 };
 
+/**
+ * Sign out the current user
+ */
 export const logout = async () => {
-  return await auth().signOut();
-};
-
-export const resetPassword = async (email: string) => {
-  return await auth().sendPasswordResetEmail(email);
+  await auth().signOut();
 };

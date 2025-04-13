@@ -28,6 +28,7 @@ export interface UserProfile {
   gender: Gender;
   photoUrl?: string;
   description?: string;
+  location?: Location;
   matchPreferences?: MatchPreferences;
   settings?: UserSettings;
   createdAt?: any;
@@ -38,7 +39,17 @@ export type RegistrationData = Partial<Omit<UserProfile, 'uid' | 'createdAt' | '
   password?: string;
 };
 
-export type PublicUserProfile = Pick<
-  UserProfile,
-  'uid' | 'displayName' | 'photoUrl' | 'age' | 'gender' | 'description' | 'matchPreferences'
->;
+export type PublicUserProfile = {
+  uid: string;
+  displayName: string;
+  photoUrl?: string;
+  age: number;
+  gender: Gender;
+  description?: string;
+  matchPreferences?: MatchPreferences;
+  distanceKm?: number; 
+};
+export interface Location{
+  latitude: number;
+  longitude: number;
+}

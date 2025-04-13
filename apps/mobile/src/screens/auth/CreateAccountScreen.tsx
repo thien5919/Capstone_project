@@ -1,5 +1,3 @@
-// src/screens/auth/CreateAccountScreen.tsx
-
 import React, { useState } from 'react';
 import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
@@ -16,6 +14,10 @@ export default function CreateAccountScreen() {
   const [error, setError] = useState<string | null>(null);
 
   const handleNext = () => {
+    if (!email.includes('@')) {
+      setError('Please enter a valid email.');
+      return;
+    }
     if (!email || !password || !confirmPassword) {
       setError('Please fill in all fields.');
       return;

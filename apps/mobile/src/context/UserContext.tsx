@@ -1,55 +1,49 @@
-import React, {createContext, useContext, useEffect, useState} from "react";
-import {getUserProfile, updateUserProfile, saveMatchPreference} from "../services/user.service";
-import {useAuth} from "./AuthContext";
+// src/context/UserContext.tsx
+import React, { createContext, useContext, useEffect, useState } from 'react';
+import auth from '@react-native-firebase/auth';
+import { api } from '../services/api.service';
+import { PublicUserProfile } from '../types/user.types';
 
 interface UserContextType {
-    profile: any;
-    updateProfile: (data: any) => Promise<void>;
-    updateMatchPreference: (pref: any) => Promise<void>;
-    reloadProfile: () => Promise<void>;
+  userProfile: PublicUserProfile | null;
+  refreshUserProfile: () => Promise<void>;
+  updateUserProfile: (updates: Partial<PublicUserProfile>) => Promise<void>;
 }
 
-const UserContext = createContext<UserContextType | undefined>(undefined);
+const UserContext = createContext<UserContextType>({
+  userProfile: null,
+  refreshUserProfile: async () => {},
+  updateUserProfile: async () => {},
+});
 
-export const UserProvider = ({children}: {children: React.ReactNode}) => {
-    const {user} = useAuth();
-    const [profile, setProfile] = useState<any>(null);
+export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children }) => {
+  const [userProfile, setUserProfile] = useState<PublicUserProfile | null>(null);
 
-    useEffect(() => {
-        if (user?.uid) {
-            loadProfile();
-        }
-    }, [user]);
-
-    const loadProfile = async () => {
-        if (!user?.uid) return;
-        const data = await getUserProfile(user.uid);
-        setProfile(data);
-    };
-
-    const updateProfile = async (data: any) => {
-        if (!user?.uid) return;
-        await updateUserProfile(user.uid, data);
-        await loadProfile();
-    };
-
-    const updateMatchPreference = async (pref: any) => {
-        if (!user?.uid) return;
-        await saveMatchPreference(user.uid, pref);
-        await loadProfile();
-    };
-
-    return (
-        <UserContext.Provider value={{profile, updateProfile, updateMatchPreference, reloadProfile: loadProfile}}>
-            {children}
-        </UserContext.Provider>
-    );
-};
-
-export const useUser = (): UserContextType => {
-    const context = useContext(UserContext);
-    if (!context) {
-        throw new Error("useUser must be used within a UserProvider");
+  const refreshUserProfile = async () => {
+    const idToken = await auth().currentUser?.getIdToken();
+    if (idToken) {
+      const profile = await api.getProfile(idToken);
+      setUserProfile(profile);
     }
-    return context;
+  };
+
+  const updateUserProfile = async (updates: Partial<PublicUserProfile>) => {
+    const idToken = await auth().currentUser?.getIdToken();
+    if (idToken) {
+      await api.updateProfile(idToken, updates);
+      await refreshUserProfile();
+    }
+  };
+
+  useEffect(() => {
+    refreshUserProfile();
+  }, []);
+
+  return (
+    <UserContext.Provider value={{ userProfile, refreshUserProfile, updateUserProfile }}>
+      {children}
+    </UserContext.Provider>
+  );
 };
+
+export const useUser = () => useContext(UserContext);
