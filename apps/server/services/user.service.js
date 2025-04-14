@@ -5,8 +5,23 @@ exports.updateUserToken = async (uid, fcmToken) => {
 };
 
 exports.getUserProfile = async (uid) => {
-  const doc = await firestore.collection('users').doc(uid).get();
-  if (!doc.exists) throw new Error('User not found');
+  console.log('🔍 Fetching profile for UID:', uid);
+
+  const ref = firestore.collection('users').doc(uid);
+  const doc = await ref.get(); // ✅ Được khai báo đúng thứ tự
+
+  console.log('📦 Document exists?', doc.exists);
+
+  if (!doc.exists) {
+    console.warn('🆕 Document not found, creating profile...');
+    await ref.set({
+      createdAt: new Date(),
+      email: '',
+      name: '',
+    });
+    return { created: true, uid };
+  }
+
   return doc.data();
 };
 

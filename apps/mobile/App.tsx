@@ -13,6 +13,7 @@ import { NotificationProvider } from './src/context/NotificationContext';
 import RootNavigator from './src/navigation/RootNavigator';
 import { requestAllPermissions } from './src/services/permission.service';
 
+
 const App: React.FC = () => {
   useEffect(() => {
     requestAllPermissions();

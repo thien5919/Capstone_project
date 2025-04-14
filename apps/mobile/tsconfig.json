@@ -1,13 +1,17 @@
 {
-  "extends": "./node_modules/@react-native/typescript-config/tsconfig.json",
   "compilerOptions": {
-    "typeRoots": [
-      "./src/@types",
-      "./node_modules/@types"
-    ],
-    "baseUrl": "./src",
-    "paths": {
-      "@env": ["../.env"]
-    }
-  }
+    "jsx": "react-native",               // ✅ Cần thiết cho JSX
+    "target": "esnext",
+    "module": "esnext",
+    "lib": ["esnext"],
+    "moduleResolution": "node",
+    "allowJs": true,
+    "esModuleInterop": true,
+    "strict": true,
+    "noEmit": true,
+    "resolveJsonModule": true,
+    "skipLibCheck": true
+  },
+  "include": ["src"],
+  "exclude": ["node_modules"]
 }

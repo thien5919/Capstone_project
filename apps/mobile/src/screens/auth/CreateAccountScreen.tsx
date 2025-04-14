@@ -1,8 +1,9 @@
 import React, { useState } from 'react';
-import { View, StyleSheet, KeyboardAvoidingView, Platform } from 'react-native';
+import { View, StyleSheet, KeyboardAvoidingView, Platform, Alert } from 'react-native';
 import { TextInput, Button, Text } from 'react-native-paper';
 import { useNavigation } from '@react-navigation/native';
 import { useRegistration } from '../../context/RegistrationContext';
+import auth from '@react-native-firebase/auth';
 
 export default function CreateAccountScreen() {
   const navigation = useNavigation();
@@ -12,14 +13,22 @@ export default function CreateAccountScreen() {
   const [password, setPassword] = useState('');
   const [confirmPassword, setConfirmPassword] = useState('');
   const [error, setError] = useState<string | null>(null);
+  const [loading, setLoading] = useState(false);
 
-  const handleNext = () => {
-    if (!email.includes('@')) {
+  const handleNext = async () => {
+    setError(null);
+
+    // Basic validation
+    if (!email || !password || !confirmPassword) {
+      setError('Please fill in all fields.');
+      return;
+    }
+    if (!email.includes('@') || !email.includes('.')) {
       setError('Please enter a valid email.');
       return;
     }
-    if (!email || !password || !confirmPassword) {
-      setError('Please fill in all fields.');
+    if (password.length < 6) {
+      setError('Password must be at least 6 characters.');
       return;
     }
     if (password !== confirmPassword) {
@@ -27,8 +36,23 @@ export default function CreateAccountScreen() {
       return;
     }
 
-    updateRegistrationData({ email, password });
-    navigation.navigate('ProfileInfo' as never);
+    try {
+      setLoading(true);
+      const methods = await auth().fetchSignInMethodsForEmail(email);
+
+      if (methods.length > 0) {
+        setError('This email is already in use.');
+        return;
+      }
+
+      updateRegistrationData({ email, password });
+      navigation.navigate('ProfileInfo' as never);
+    } catch (err: any) {
+      console.error('🔴 Email check failed:', err.message);
+      setError('Something went wrong. Please try again.');
+    } finally {
+      setLoading(false);
+    }
   };
 
   return (
@@ -64,7 +88,13 @@ export default function CreateAccountScreen() {
           style={styles.input}
         />
 
-        <Button mode="contained" onPress={handleNext} style={styles.button}>
+        <Button
+          mode="contained"
+          onPress={handleNext}
+          loading={loading}
+          disabled={loading}
+          style={styles.button}
+        >
           Next
         </Button>
       </View>

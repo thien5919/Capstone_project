@@ -18,13 +18,16 @@ router.post('/update-token', verifyFirebaseToken, async (req, res) => {
 // Protected route: get current user's profile
 router.get('/me', verifyFirebaseToken, async (req, res) => {
   const uid = req.user.uid;
+  console.log('📌 Requested UID:', uid); // 👈 THÊM LOG
   try {
     const profile = await getUserProfile(uid);
     res.status(200).json(profile);
   } catch (err) {
+    console.error('❌ Error fetching profile:', err);
     res.status(500).json({ error: err.message });
   }
 });
+
 
 // Protected route: update user profile
 router.put('/me', verifyFirebaseToken, async (req, res) => {
@@ -39,7 +42,7 @@ router.put('/me', verifyFirebaseToken, async (req, res) => {
 });
 
 // Public route: get user profile by uid
-router.get('/:uid', async (req, res) => {
+router.get('/:uid', verifyFirebaseToken, async (req, res) => {
   const { uid } = req.params;
   try {
     const profile = await getUserProfile(uid);

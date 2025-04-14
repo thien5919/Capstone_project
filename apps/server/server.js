@@ -14,7 +14,7 @@ app.use(bodyParser.json());
 
 app.use('/api/notify', notificationRoutes);
 app.use('/api/match', matchRoutes);
-app.use('/api/user', userRoutes);
+app.use('/api/users', userRoutes);
 app.use('/api/chat', chatRoutes);
 app.get('/', (req, res) => {
   res.send('GymBuddies API Server is running');
