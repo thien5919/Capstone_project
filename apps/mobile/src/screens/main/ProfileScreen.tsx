@@ -1,5 +1,5 @@
 import React from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, Button, ActivityIndicator, ScrollView, Image } from 'react-native';
 import { useUser } from '../../context/UserContext';
 import { useAuth } from '../../context/AuthContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
@@ -21,13 +21,26 @@ const ProfileScreen = () => {
             <Text style={{ color: 'red' }}>{error}</Text>
           </View>
         ) : userProfile ? (
-          <>
-            <Text style={styles.title}>👋 Hello, {userProfile.displayName || 'User'}</Text>
-            <Text style={styles.text}>Email: {userProfile.email || 'N/A'}</Text>
-            <Text style={styles.text}>Age: {userProfile.age || 'N/A'}</Text>
-            <Text style={styles.text}>Gender: {userProfile.gender || 'N/A'}</Text>
-            <Text style={styles.text}>Bio: {userProfile.description || 'N/A'}</Text>
-          </>
+          <View style={styles.profileContainer}>
+            {/* Avatar hình tròn */}
+            <Image
+              source={{ uri: userProfile.photoUrl || 'https://via.placeholder.com/150' }}
+              style={styles.avatar}
+            />
+            <Text style={styles.name}>
+              {userProfile.displayName || 'User'}, {userProfile.age || 'N/A'}
+            </Text>
+            <Text style={styles.gender}>{userProfile.gender || 'N/A'}</Text>
+
+            {/* Thông tin chi tiết */}
+            <View style={styles.details}>
+              <Text style={styles.label}>📧 Email:</Text>
+              <Text style={styles.value}>{userProfile.email || 'N/A'}</Text>
+
+              <Text style={styles.label}>📝 Bio:</Text>
+              <Text style={styles.value}>{userProfile.description || 'N/A'}</Text>
+            </View>
+          </View>
         ) : (
           <View style={styles.centered}>
             <Text>Profile not found.</Text>
@@ -52,20 +65,48 @@ const styles = StyleSheet.create({
   scrollContent: {
     padding: 20,
     flexGrow: 1,
+    alignItems: 'center',
+  },
+  profileContainer: {
+    alignItems: 'center',
+    marginTop: 30,
+  },
+  avatar: {
+    width: 120,
+    height: 120,
+    borderRadius: 60, // hình tròn
+    marginBottom: 16,
+    backgroundColor: '#e5e7eb',
+  },
+  name: {
+    fontSize: 24,
+    fontWeight: '700',
+    marginBottom: 4,
+  },
+  gender: {
+    fontSize: 16,
+    color: '#6B7280',
+    marginBottom: 16,
+  },
+  details: {
+    width: '100%',
+    paddingHorizontal: 10,
+  },
+  label: {
+    fontWeight: '600',
+    fontSize: 14,
+    marginTop: 10,
+    color: '#374151',
+  },
+  value: {
+    fontSize: 16,
+    marginBottom: 10,
+    color: '#111827',
   },
   centered: {
     alignItems: 'center',
     justifyContent: 'center',
     marginTop: 40,
-  },
-  title: {
-    fontSize: 24,
-    fontWeight: '600',
-    marginBottom: 16,
-  },
-  text: {
-    fontSize: 16,
-    marginBottom: 8,
   },
   spacer: {
     height: 100,
