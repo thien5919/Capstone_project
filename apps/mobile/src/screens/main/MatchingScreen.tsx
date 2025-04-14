@@ -1,4 +1,3 @@
-
 import React, { useEffect, useRef, useState } from 'react';
 import { View, ActivityIndicator, Text, StyleSheet, Dimensions, SafeAreaView } from 'react-native';
 import Swiper from 'react-native-deck-swiper';
@@ -6,7 +5,8 @@ import firestore from '@react-native-firebase/firestore';
 import auth from '@react-native-firebase/auth';
 import Modal from 'react-native-modal';
 import { Button, Appbar, TextInput } from 'react-native-paper';
-import { useNavigation } from '@react-navigation/native';
+import DropDownDefault from 'react-native-paper-dropdown';
+const DropDown = DropDownDefault as unknown as React.ComponentType<any>;import { useNavigation } from '@react-navigation/native';
 
 import ProfileCard from '../../components/ProfileCard/ProfileCard';
 import { PublicUserProfile } from '../../types/user.types';
@@ -25,6 +25,9 @@ const MatchingScreen = () => {
   const [matchedUser, setMatchedUser] = useState<PublicUserProfile | null>(null);
   const [profiles, setProfiles] = useState<(PublicUserProfile & { distanceKm: number })[]>([]);
   const [loading, setLoading] = useState(true);
+  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
+  const [matchPreferences, setMatchPreferences] = useState({ gender: 'any', minAge: 18, maxAge: 100 });
+  const [showGenderDropdown, setShowGenderDropdown] = useState(false);
 
   const swiperRef = useRef<Swiper<PublicUserProfile & { distanceKm: number }>>(null);
   const currentUser = auth().currentUser;
@@ -43,17 +46,29 @@ const MatchingScreen = () => {
   }, []);
 
   useEffect(() => {
+    const fetchUserPreferences = async () => {
+      if (!currentUser) return;
+      const doc = await firestore().collection('users').doc(currentUser.uid).get();
+      const prefs = doc.data()?.matchPreferences || { gender: 'any', minAge: 18, maxAge: 100 };
+      setMatchPreferences(prefs);
+    };
+
     const fetchProfiles = async () => {
       if (!currentUser) return;
-
       try {
+        await fetchUserPreferences();
         const snapshot = await firestore().collection('users').get();
         const allUsers = snapshot.docs
           .map((doc) => {
             const data = doc.data() as PublicUserProfile & { location?: { latitude: number; longitude: number } };
             return { ...data, uid: doc.id };
           })
-          .filter((user) => user.uid !== currentUser.uid && user.location);
+          .filter((user) => {
+            if (user.uid === currentUser.uid || !user.location || !user.age || !user.gender) return false;
+            const genderMatch = matchPreferences.gender === 'any' || user.gender === matchPreferences.gender;
+            const ageMatch = user.age >= matchPreferences.minAge && user.age <= matchPreferences.maxAge;
+            return genderMatch && ageMatch;
+          });
 
         const nearbyUsers = myLocation
           ? filterNearbyUsers(allUsers as any, myLocation)
@@ -98,7 +113,7 @@ const MatchingScreen = () => {
       <Appbar.Header>
         <Appbar.Content title="Matching" />
         <Appbar.Action icon="account-plus" onPress={() => setShowAddFriendBar(!showAddFriendBar)} />
-        <Appbar.Action icon="filter" onPress={() => navigation.navigate('MatchPreference' as never)} />
+        <Appbar.Action icon="filter" onPress={() => setShowPreferencesModal(true)} />
       </Appbar.Header>
 
       {showAddFriendBar && (
@@ -142,9 +157,58 @@ const MatchingScreen = () => {
       <Modal isVisible={matchedModalVisible}>
         <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10, alignItems: 'center' }}>
           <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>🎉 It's a Match!</Text>
-          {matchedUser && <Text>You and {matchedUser.displayName || matchedUser.displayName || matchedUser.uid} liked each other!</Text>}
+          {matchedUser && <Text>You and {matchedUser.displayName || matchedUser.uid} liked each other!</Text>}
           <Button mode="contained" onPress={() => setMatchedModalVisible(false)} style={{ marginTop: 15 }}>
             Close
+          </Button>
+        </View>
+      </Modal>
+
+      <Modal isVisible={showPreferencesModal} onBackdropPress={() => setShowPreferencesModal(false)}>
+        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
+          <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Match Preferences</Text>
+
+          <DropDown
+            label="Preferred Gender"
+            mode="outlined"
+            visible={showGenderDropdown}
+            showDropDown={() => setShowGenderDropdown(true)}
+            onDismiss={() => setShowGenderDropdown(false)}
+            value={matchPreferences.gender}
+            setValue={(val: string) => setMatchPreferences((prev) => ({ ...prev, gender: val }))}
+            list={[
+              { label: 'Any', value: 'any' },
+              { label: 'Male', value: 'male' },
+              { label: 'Female', value: 'female' },
+              { label: 'Non-binary', value: 'non-binary' },
+            ]}
+          />
+
+          <TextInput
+            label="Min Age"
+            keyboardType="numeric"
+            value={String(matchPreferences.minAge)}
+            onChangeText={(val: string) => setMatchPreferences((prev) => ({ ...prev, minAge: parseInt(val) || 18 }))}
+            style={{ marginBottom: 10 }}
+          />
+
+          <TextInput
+            label="Max Age"
+            keyboardType="numeric"
+            value={String(matchPreferences.maxAge)}
+            onChangeText={(val: string) => setMatchPreferences((prev) => ({ ...prev, maxAge: parseInt(val) || 100 }))}
+            style={{ marginBottom: 20 }}
+          />
+
+          <Button
+            mode="contained"
+            onPress={async () => {
+              if (!currentUser) return;
+              await firestore().collection('users').doc(currentUser.uid).update({ matchPreferences });
+              setShowPreferencesModal(false);
+            }}
+          >
+            Save Preferences
           </Button>
         </View>
       </Modal>
@@ -164,10 +228,8 @@ const styles = StyleSheet.create({
     height: 500,
     borderRadius: 20,
     padding: 20,
-    backgroundColor: '#F3F4F6',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
+    backgroundColor: '#F3F4F6'
+  }
 });
 
 export default MatchingScreen;

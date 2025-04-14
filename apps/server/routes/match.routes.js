@@ -1,50 +1,50 @@
 const express = require('express');
 const router = express.Router();
-const { sendNotification } = require('../services/fcm.service');
-const admin = require('firebase-admin');
+const { swipeUser, checkMatch, getMatchesForUser } = require('../services/match.service');
 const verifyFirebaseToken = require('../middlewares/auth.middleware');
 
-// Bảo vệ toàn bộ route bằng Firebase Token
 router.use(verifyFirebaseToken);
 
-/**
- * Gửi thông báo push khi match thành công
- * POST /api/notification/match
- * Body: { toUid, title, body }
- */
-router.post('/match', async (req, res) => {
-  const { toUid, title, body } = req.body;
+// POST /api/match/swipe
+router.post('/swipe', async (req, res) => {
+  const { targetUserId, liked } = req.body;
+  const currentUserId = req.user.uid;
 
   try {
-    const userDoc = await admin.firestore().collection('users').doc(toUid).get();
-    const fcmToken = userDoc.data()?.fcmToken;
-
-    if (!fcmToken) {
-      return res.status(400).json({ success: false, error: 'FCM token not found' });
-    }
-
-    const result = await sendNotification(fcmToken, title, body);
-    res.status(200).json({ success: true, result });
-  } catch (err) {
-    console.error('Notification error:', err);
-    res.status(500).json({ success: false, error: err.message });
-  }
-});
-
-/**
- * Gửi thông báo push qua token trực tiếp (dùng cho test)
- * POST /api/notification/
- * Body: { toToken, title, body }
- */
-router.post('/', async (req, res) => {
-  const { toToken, title, body } = req.body;
-
-  try {
-    const result = await sendNotification(toToken, title, body);
-    res.status(200).json({ success: true, result });
+    await swipeUser(currentUserId, targetUserId, liked);
+    res.status(200).json({ success: true });
   } catch (err) {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+
+// POST /api/match/check-match
+router.post('/check-match', async (req, res) => {
+  const { targetUserId } = req.body;
+  const currentUserId = req.user.uid;
+
+  try {
+    const isMatch = await checkMatch(currentUserId, targetUserId);
+    res.status(200).json({ success: true, isMatch });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+// ✅ GET /api/match/me
+router.get('/me', async (req, res) => {
+  const uid = req.user.uid;
+  const limit = parseInt(req.query.limit) || 10;
+  const startAfter = req.query.startAfter || null;
+
+  try {
+    const matches = await getMatchesForUser(uid, limit, startAfter);
+    res.status(200).json({ success: true, matches });
+  } catch (err) {
+    console.error('Error getting matches:', err);
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
 
 module.exports = router;

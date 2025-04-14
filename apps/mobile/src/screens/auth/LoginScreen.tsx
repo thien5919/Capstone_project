@@ -13,20 +13,20 @@ const LoginScreen = () => {
 
   const handleLogin = async () => {
     if (!email || !password) {
-      return Alert.alert('Thông báo', 'Vui lòng nhập email và mật khẩu.');
+      return Alert.alert('Notice', 'Please enter both email and password.');
     }
 
     try {
       await auth().signInWithEmailAndPassword(email.trim(), password);
       // No manual navigation: AuthContext + RootNavigator handles this
     } catch (error: any) {
-      Alert.alert('Đăng nhập thất bại', error.message);
+      Alert.alert('Login Failed', error.message);
     }
   };
 
   return (
     <View style={styles.container}>
-      <Text style={styles.title}>Đăng nhập</Text>
+      <Text style={styles.title}>Login</Text>
 
       <TextInput
         style={styles.input}
@@ -39,20 +39,20 @@ const LoginScreen = () => {
 
       <TextInput
         style={styles.input}
-        placeholder="Mật khẩu"
+        placeholder="Password"
         secureTextEntry
         value={password}
         onChangeText={setPassword}
       />
 
-      <Button title="Đăng nhập" onPress={handleLogin} />
+      <Button title="Log In" onPress={handleLogin} />
 
       <TouchableOpacity onPress={() => navigation.navigate('SignUp')}>
-        <Text style={styles.link}>Tạo tài khoản mới</Text>
+        <Text style={styles.link}>Create a new account</Text>
       </TouchableOpacity>
 
       <TouchableOpacity onPress={() => navigation.navigate('ForgotPassword')}>
-        <Text style={styles.link}>Quên mật khẩu?</Text>
+        <Text style={styles.link}>Forgot password?</Text>
       </TouchableOpacity>
     </View>
   );

@@ -3167,6 +3167,16 @@ __metadata:
   languageName: node
   linkType: hard
 
+"@react-native-picker/picker@npm:^2.11.0":
+  version: 2.11.0
+  resolution: "@react-native-picker/picker@npm:2.11.0"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+  checksum: 10c0/39c970f123162cbdc5d580418a99332c3269e638c641eeb2cfd147056d0635905cff815eb0bcdcc10f20e2f4de711a24f5d837af71055b928b2182d8be395fd0
+  languageName: node
+  linkType: hard
+
 "@react-native/assets-registry@npm:0.78.2":
   version: 0.78.2
   resolution: "@react-native/assets-registry@npm:0.78.2"
@@ -7162,6 +7172,7 @@ __metadata:
   version: 0.0.0-use.local
   resolution: "gymbuddiesapp@workspace:."
   dependencies:
+    "@react-native-picker/picker": "npm:^2.11.0"
     metro-react-native-babel-preset: "npm:^0.77.0"
     prettier: "npm:^3.5.3"
     react-native-permissions: "npm:^5.3.0"
@@ -9772,6 +9783,7 @@ __metadata:
     react-native-modal: "npm:^14.0.0-rc.1"
     react-native-monorepo-tools: "npm:^1.2.1"
     react-native-paper: "npm:^5.13.1"
+    react-native-paper-dropdown: "npm:^2.3.1"
     react-native-permissions: "npm:^5.3.0"
     react-native-reanimated: "npm:^3.17.2"
     react-native-safe-area-context: "npm:^5.3.0"
@@ -10809,7 +10821,20 @@ __metadata:
   languageName: node
   linkType: hard
 
-"react-native-paper@npm:^5.13.1":
+"react-native-paper-dropdown@npm:^2.3.1":
+  version: 2.3.1
+  resolution: "react-native-paper-dropdown@npm:2.3.1"
+  dependencies:
+    react-native-paper: "npm:^5.12.3"
+  peerDependencies:
+    react: "*"
+    react-native: "*"
+    react-native-paper: "*"
+  checksum: 10c0/528b0ace0ed2d0a37f7fc08112997ce5fc8d7e860d4951797aae7d76b0284653916ecdd56b0f064ab844dad6c2eeb07be3941490bae4db34f81b7bd9bf51d9b5
+  languageName: node
+  linkType: hard
+
+"react-native-paper@npm:^5.12.3, react-native-paper@npm:^5.13.1":
   version: 5.13.1
   resolution: "react-native-paper@npm:5.13.1"
   dependencies:
