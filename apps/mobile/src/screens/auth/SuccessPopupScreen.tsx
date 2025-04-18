@@ -1,3 +1,5 @@
+// ✅ File: SuccessPopupScreen.tsx (Updated)
+
 import React, { useEffect } from 'react';
 import { View, StyleSheet, Animated, Alert, Image } from 'react-native';
 import { Text } from 'react-native-paper';
@@ -8,7 +10,7 @@ import { RootStackParamList } from '../../navigation/types';
 import { register } from '../../services/auth.service';
 import auth from '@react-native-firebase/auth';
 import { useRegistration } from '../../context/RegistrationContext';
-import { saveUserProfile } from '../../services/user.service';
+import { saveUserProfile, saveUserLocation } from '../../services/user.service';
 
 import DEFAULT from '../../../assets/images/default.png';
 const DEFAULT_AVATAR = Image.resolveAssetSource(DEFAULT).uri;
@@ -54,6 +56,8 @@ export default function SuccessPopupScreen() {
           updatedAt: new Date(),
         });
 
+        await saveUserLocation(currentUser.uid); // ✅ Save location sau khi tạo profile
+
         navigation.navigate('App');
       } catch (err: any) {
         console.error('Registration error:', err);
@@ -66,7 +70,7 @@ export default function SuccessPopupScreen() {
 
   return (
     <View style={styles.overlay}>
-      <Animated.View style={[styles.popup, { opacity }]}>
+      <Animated.View style={[styles.popup, { opacity }]}> 
         <Ionicons name="checkmark-circle" size={60} color="#10B981" />
         <Text style={styles.title}>Success!</Text>
         <Text style={styles.message}>You’ve joined Gym Buddies 🎉</Text>

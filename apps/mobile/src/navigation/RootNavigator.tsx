@@ -4,6 +4,7 @@ import { createNativeStackNavigator } from '@react-navigation/native-stack';
 import { useAuth } from '../context/AuthContext';
 import AuthNavigator from './AuthNavigator';
 import AppNavigator from './AppNavigator';
+import { MatchingProvider } from '../context/MatchingContext';
 
 const Stack = createNativeStackNavigator();
 

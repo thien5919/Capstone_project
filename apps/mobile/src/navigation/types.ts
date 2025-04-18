@@ -2,6 +2,7 @@ export type SignUpStackParamList = {
     CreateAccount: undefined;
     ProfileInfo: undefined;
     MatchPreference: undefined;
+  
   };
   
   export type RootStackParamList = {
@@ -20,6 +21,6 @@ export type SignUpStackParamList = {
   export type ChatStackParamList = {
     ChatList: undefined;
     ChatRoom: { chatId: string };
+    Chat: { otherUser: { uid: string; displayName: string } }; // ✅ add this
   };
- 
   

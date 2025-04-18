@@ -1,16 +1,17 @@
 {
   "compilerOptions": {
-    "jsx": "react-native",               // ✅ Cần thiết cho JSX
+    "jsx": "react-native",
     "target": "esnext",
     "module": "esnext",
-    "lib": ["esnext"],
+    "lib": ["dom", "esnext"],
     "moduleResolution": "node",
     "allowJs": true,
     "esModuleInterop": true,
     "strict": true,
     "noEmit": true,
     "resolveJsonModule": true,
-    "skipLibCheck": true
+    "skipLibCheck": true,
+    "types": ["react", "react-native"]
   },
   "include": ["src"],
   "exclude": ["node_modules"]

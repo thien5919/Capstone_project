@@ -1,76 +1,64 @@
+import auth from '@react-native-firebase/auth';
+
 const BASE_URL = 'http://10.0.2.2:3000/api';
 
+// 🛠 Helper: Lấy token Firebase từ current user
+const getAuthToken = async (): Promise<string> => {
+  const currentUser = auth().currentUser;
+  console.log('🧩 Current UID:', currentUser?.uid); 
+  if (!currentUser) throw new Error('User not authenticated');
+  const idToken = await currentUser.getIdToken();
+  return idToken;
+};
+
+// 🛠 Helper: Gửi request
+const request = async (path: string, method: string = 'GET', body?: any) => {
+  const token = await getAuthToken(); 
+
+  const headers: HeadersInit = {
+    Authorization: `Bearer ${token}`,
+    'Content-Type': 'application/json',
+  };
+
+  const options: RequestInit = {
+    method,
+    headers,
+  };
+
+  if (body) {
+    options.body = JSON.stringify(body);
+  }
+
+  const res = await fetch(`${BASE_URL}${path}`, options);
+
+  const text = await res.text(); 
+  let data;
+  try {
+    data = JSON.parse(text); 
+  } catch (error) {
+    console.error('🛑 Failed to parse JSON. Raw response:', text);
+    throw new Error('Invalid JSON response from server');
+  }
+
+  if (!res.ok) {
+    throw new Error(data.error || 'API request failed');
+  }
+
+  return data;
+};
+
+
+// 🚀 Final export object
 export const api = {
-  // ✅ Get user profile
-  getProfile: async (token: string) => {
-    const res = await fetch(`${BASE_URL}/users/me`, {
-      headers: {
-        Authorization: `Bearer ${token}`,
-      },
-    });
+  // ✅ User Profile
+  getProfile: () => request('/users/me', 'GET'),
+  updateProfile: (updates: any) => request('/users/me', 'PUT', updates),
+  sendFcmToken: (fcmToken: string) => request('/users/update-token', 'POST', { fcmToken }),
 
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to fetch profile');
-    }
-
-    return data;
-  },
-
-  // ✅ Update user profile
-  updateProfile: async (token: string, updates: any) => {
-    const res = await fetch(`${BASE_URL}/users/me`, {
-      method: 'PUT',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(updates),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to update profile');
-    }
-
-    return data;
-  },
-
-  // ✅ Send FCM token
-  sendFcmToken: async (token: string, fcmToken: string) => {
-    const res = await fetch(`${BASE_URL}/users/update-token`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({ fcmToken }),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Failed to send FCM token');
-    }
-
-    return data;
-  },
-
-  // ✅ Swipe action
-  swipe: async (token: string, payload: any) => {
-    const res = await fetch(`${BASE_URL}/match/swipe`, {
-      method: 'POST',
-      headers: {
-        Authorization: `Bearer ${token}`,
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(payload),
-    });
-
-    const data = await res.json();
-    if (!res.ok) {
-      throw new Error(data.error || 'Swipe failed');
-    }
-
-    return data;
-  },
+  // ✅ Matching
+  swipe: (payload: { targetUserId: string; direction: 'like' | 'pass' }) => request('/match/swipe', 'POST', payload),
+  fetchNearbyUsers: () => request('/users/nearby', 'GET'),
+  fetchPendingRequests: () => request('/match/pending', 'GET'),
+  acceptMatchRequest: (requestUserId: string) => request('/match/accept', 'POST', { requestUserId }),
+  rejectMatchRequest: (requestUserId: string) => request('/match/reject', 'POST', { requestUserId }),
 };

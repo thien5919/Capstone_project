@@ -1,5 +1,7 @@
 import { firestore } from './firebase';
 import { UserProfile, MatchPreferences } from '../types/user.types';
+import { getCurrentLocation } from './location.service'; 
+//updated
 
 export const saveUserProfile = async (uid: string, data: UserProfile): Promise<void> => {
   await firestore().collection('users').doc(uid).set(data, { merge: true });
@@ -36,3 +38,11 @@ export const checkUserExists = async (uid: string): Promise<boolean> => {
 export const upsertUserProfile = async (uid: string, data: Partial<UserProfile>): Promise<void> => {
   await firestore().collection('users').doc(uid).set(data, { merge: true });
 };
+
+
+export const saveUserLocation = async (uid: string) => {
+  const location = await getCurrentLocation();
+  await firestore().collection('users').doc(uid).update({ location });
+  console.log('📍 User location saved:', location);
+};
+

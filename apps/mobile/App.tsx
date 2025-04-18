@@ -1,18 +1,19 @@
 import 'react-native-gesture-handler';
 import React, { useEffect, useCallback } from 'react';
 import { AppState, AppStateStatus } from 'react-native';
-import { NavigationContainer } from '@react-navigation/native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Provider as PaperProvider } from 'react-native-paper'; // 🛠️ react-native-paper Provider
 
 import { AuthProvider } from './src/context/AuthContext';
 import { RegistrationProvider } from './src/context/RegistrationContext';
 import { UserProvider } from './src/context/UserContext';
+
+
 import { ThemeProvider } from './src/context/ThemeContext';
-import { ChatProvider } from './src/context/ChatContext';
-import { NotificationProvider } from './src/context/NotificationContext';
+
+
 import RootNavigator from './src/navigation/RootNavigator';
 import { requestAllPermissions } from './src/services/permission.service';
-
 
 const App: React.FC = () => {
   useEffect(() => {
@@ -32,19 +33,17 @@ const App: React.FC = () => {
 
   return (
     <GestureHandlerRootView style={{ flex: 1 }}>
-      <AuthProvider>
-        <RegistrationProvider>
-          <UserProvider>
-            <NotificationProvider>
-              <ChatProvider>
-                <ThemeProvider>
-                    <RootNavigator />             
-                </ThemeProvider>
-              </ChatProvider>
-            </NotificationProvider>
-          </UserProvider>
-        </RegistrationProvider>
-      </AuthProvider>
+      <PaperProvider>
+        <ThemeProvider> {/* 🎨 Theme phải bọc ngoài để styling toàn app */}
+          <AuthProvider>
+            <RegistrationProvider>
+              <UserProvider>                  
+                      <RootNavigator />                  
+              </UserProvider>
+            </RegistrationProvider>
+          </AuthProvider>
+        </ThemeProvider>
+      </PaperProvider>
     </GestureHandlerRootView>
   );
 };

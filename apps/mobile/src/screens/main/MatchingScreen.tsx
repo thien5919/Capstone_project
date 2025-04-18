@@ -1,235 +1,190 @@
-import React, { useEffect, useRef, useState } from 'react';
-import { View, ActivityIndicator, Text, StyleSheet, Dimensions, SafeAreaView } from 'react-native';
-import Swiper from 'react-native-deck-swiper';
-import firestore from '@react-native-firebase/firestore';
-import auth from '@react-native-firebase/auth';
-import Modal from 'react-native-modal';
-import { Button, Appbar, TextInput } from 'react-native-paper';
-import DropDownDefault from 'react-native-paper-dropdown';
-const DropDown = DropDownDefault as unknown as React.ComponentType<any>;import { useNavigation } from '@react-navigation/native';
+import React, { useLayoutEffect, useState } from 'react';
+import { View, Text, Image, TouchableOpacity, ScrollView } from 'react-native';
+import { IconButton, Button, Dialog, Portal, TextInput } from 'react-native-paper';
+import Slider from '@react-native-community/slider'; 
+import { useMatching } from '../../context/MatchingContext';
+import { likeUser, passUser } from '../../services/match.service';
+import { useNavigation } from '@react-navigation/native';
 
-import ProfileCard from '../../components/ProfileCard/ProfileCard';
-import { PublicUserProfile } from '../../types/user.types';
-import { useLocation } from '../../context/LocationContext';
-import { filterNearbyUsers } from '../../services/haversine.service';
-import { getCurrentLocation, saveUserLocation } from '../../services/location.service';
-import { fetchSwipedUserIds, checkMutualSwipeAndCreateMatch, saveSwipedUser, addFriendById } from '../../services/match.service';
+interface FilterState {
+  gender: 'male' | 'female' | 'all';
+  ageRange: [number, number];
+  distance: number;
+}
 
-const { width } = Dimensions.get('window');
+export const MatchingScreen = () => {
+  const { profiles, removeProfile, refreshProfiles } = useMatching();
+  const [isProfileExpanded, setIsProfileExpanded] = useState(false);
+  const [currentIndex, setCurrentIndex] = useState(0);
+  const [filter, setFilter] = useState<FilterState>({
+    gender: 'all',
+    ageRange: [18, 50],
+    distance: 50,
+  });
 
-const MatchingScreen = () => {
+  const [filterDialogVisible, setFilterDialogVisible] = useState(false);
+  const currentProfile = profiles[currentIndex];
   const navigation = useNavigation();
-  const [showAddFriendBar, setShowAddFriendBar] = useState(false);
-  const [friendIdInput, setFriendIdInput] = useState('');
-  const [matchedModalVisible, setMatchedModalVisible] = useState(false);
-  const [matchedUser, setMatchedUser] = useState<PublicUserProfile | null>(null);
-  const [profiles, setProfiles] = useState<(PublicUserProfile & { distanceKm: number })[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [showPreferencesModal, setShowPreferencesModal] = useState(false);
-  const [matchPreferences, setMatchPreferences] = useState({ gender: 'any', minAge: 18, maxAge: 100 });
-  const [showGenderDropdown, setShowGenderDropdown] = useState(false);
 
-  const swiperRef = useRef<Swiper<PublicUserProfile & { distanceKm: number }>>(null);
-  const currentUser = auth().currentUser;
-  const { location: myLocation } = useLocation();
+  useLayoutEffect(() => {
+  navigation.setOptions({
+    headerTitle: 'Match',
+    headerRight: () => (
+      <IconButton
+        icon="filter"
+        size={28}
+        onPress={() => setFilterDialogVisible(true)}
+      />
+    ),
+  });
+}, [navigation]);
 
-  useEffect(() => {
-    const updateLocation = async () => {
-      try {
-        const location = await getCurrentLocation();
-        await saveUserLocation(location);
-      } catch (e) {
-        console.warn('❌ Failed to get or save location');
-      }
-    };
-    updateLocation();
-  }, []);
-
-  useEffect(() => {
-    const fetchUserPreferences = async () => {
-      if (!currentUser) return;
-      const doc = await firestore().collection('users').doc(currentUser.uid).get();
-      const prefs = doc.data()?.matchPreferences || { gender: 'any', minAge: 18, maxAge: 100 };
-      setMatchPreferences(prefs);
-    };
-
-    const fetchProfiles = async () => {
-      if (!currentUser) return;
-      try {
-        await fetchUserPreferences();
-        const snapshot = await firestore().collection('users').get();
-        const allUsers = snapshot.docs
-          .map((doc) => {
-            const data = doc.data() as PublicUserProfile & { location?: { latitude: number; longitude: number } };
-            return { ...data, uid: doc.id };
-          })
-          .filter((user) => {
-            if (user.uid === currentUser.uid || !user.location || !user.age || !user.gender) return false;
-            const genderMatch = matchPreferences.gender === 'any' || user.gender === matchPreferences.gender;
-            const ageMatch = user.age >= matchPreferences.minAge && user.age <= matchPreferences.maxAge;
-            return genderMatch && ageMatch;
-          });
-
-        const nearbyUsers = myLocation
-          ? filterNearbyUsers(allUsers as any, myLocation)
-          : allUsers.map((u) => ({ ...u, distanceKm: -1 }));
-
-        const swipedUserIds = await fetchSwipedUserIds(currentUser.uid);
-        const filtered = nearbyUsers.filter((user) => !swipedUserIds.includes(user.uid));
-
-        setProfiles(filtered);
-      } catch (err) {
-        console.error('❌ Error fetching profiles:', err);
-      } finally {
-        setLoading(false);
-      }
-    };
-
-    fetchProfiles();
-  }, [currentUser, myLocation]);
-
-  const handleSwipe = async (cardIndex: number, liked: boolean) => {
-    const userId = currentUser?.uid;
-    if (!userId) return;
-
-    const swipedUser = profiles[cardIndex];
+  const handleLike = async () => {
+    if (!currentProfile) return;
     try {
-      await saveSwipedUser(userId, swipedUser.uid);
-
-      if (liked) {
-        const matched = await checkMutualSwipeAndCreateMatch(userId, swipedUser.uid);
-        if (matched) {
-          setMatchedUser(swipedUser);
-          setMatchedModalVisible(true);
-        }
-      }
-    } catch (err) {
-      console.error('❌ Error saving swipe:', err);
+      await likeUser(currentProfile.uid);
+      console.log('Liked:', currentProfile.displayName);
+      removeProfile(currentProfile.uid);
+      nextProfile();
+    } catch (error) {
+      console.error('Like error:', error);
     }
   };
 
+  const handleDislike = async () => {
+    if (!currentProfile) return;
+    try {
+      await passUser(currentProfile.uid);
+      console.log('Disliked:', currentProfile.displayName);
+      removeProfile(currentProfile.uid);
+      nextProfile();
+    } catch (error) {
+      console.error('Pass error:', error);
+    }
+  };
+
+  const nextProfile = () => {
+    if (currentIndex < profiles.length - 1) {
+      setCurrentIndex(currentIndex + 1);
+      setIsProfileExpanded(false);
+    } else {
+      console.log('No more profiles.');
+    }
+  };
+
+  const handleFilterSubmit = async () => {
+    console.log('Filter applied:', filter);
+    await refreshProfiles();
+    setFilterDialogVisible(false);
+  };
+
   return (
-    <SafeAreaView style={styles.container}>
-      <Appbar.Header>
-        <Appbar.Content title="Matching" />
-        <Appbar.Action icon="account-plus" onPress={() => setShowAddFriendBar(!showAddFriendBar)} />
-        <Appbar.Action icon="filter" onPress={() => setShowPreferencesModal(true)} />
-      </Appbar.Header>
+    <View style={{ flex: 1 }}>
+      {/* TOP NAV */}
+      
 
-      {showAddFriendBar && (
-        <View style={{ padding: 10 }}>
-          <TextInput
-            label="Enter Friend ID"
-            value={friendIdInput}
-            onChangeText={setFriendIdInput}
-            mode="outlined"
-            right={<TextInput.Icon icon="send" onPress={async () => {
-              const user = auth().currentUser;
-              if (user && friendIdInput) {
-                await addFriendById(user.uid, friendIdInput);
-                setFriendIdInput('');
-                setShowAddFriendBar(false);
-              }
-            }} />}
+      {/* FILTER DIALOG */}
+      <Portal>
+        <Dialog visible={filterDialogVisible} onDismiss={() => setFilterDialogVisible(false)}>
+          <Dialog.Title><Text>Filter Settings</Text></Dialog.Title>
+          <Dialog.Content>
+
+            <Text>Gender</Text>
+            <TextInput
+              value={filter.gender}
+              onChangeText={(text) => setFilter({ ...filter, gender: text as 'male' | 'female' | 'all' })}
+              mode="outlined"
+              placeholder="all / male / female"
+              style={{ marginBottom: 16 }}
+            />
+
+            <Text>Age Range: {filter.ageRange[0]} - {filter.ageRange[1]}</Text>
+            <Slider
+              minimumValue={18}
+              maximumValue={100}
+              step={1}
+              value={filter.ageRange[0]} // ← Đúng
+              onValueChange={(value) => setFilter({ ...filter, ageRange: [value, filter.ageRange[1]] })}
+/>
+
+            <Text>Distance: {filter.distance} km</Text>
+            <Slider
+              minimumValue={1}
+              maximumValue={100}
+              step={1}
+              value={filter.distance}
+              onValueChange={(value) => setFilter({ ...filter, distance: value })}
+            />
+
+          </Dialog.Content>
+          <Dialog.Actions>
+            <Button onPress={handleFilterSubmit}><Text>Apply</Text></Button>
+          </Dialog.Actions>
+        </Dialog>
+      </Portal>
+
+      {/* PROFILE CARD */}
+      {currentProfile ? (
+        <TouchableOpacity
+          style={{ margin: 20, backgroundColor: '#fff', borderRadius: 16, overflow: 'hidden' }}
+          onPress={() => setIsProfileExpanded(!isProfileExpanded)}
+          activeOpacity={0.8}
+        >
+          <Image
+            source={{ uri: currentProfile.photoUrl || '/default-avatar.png' }}
+            style={{ width: '100%', height: 300 }}
+            resizeMode="cover"
           />
-        </View>
-      )}
+          {isProfileExpanded ? (
+            <View style={{ padding: 16 }}>
+              <IconButton
+                icon="close"
+                size={24}
+                onPress={(e) => {
+                  e.stopPropagation();
+                  setIsProfileExpanded(false);
+                }}
+                style={{ alignSelf: 'flex-end' }}
+              />
+              <Text style={{ fontSize: 22, fontWeight: 'bold' }}>
+                {currentProfile.displayName}, {currentProfile.age}
+              </Text>
+              <Text style={{ marginVertical: 8 }}>About me:</Text>
+              <Text>{currentProfile.description || "No bio yet."}</Text>
 
-      {loading ? (
-        <ActivityIndicator size="large" color="#10B981" />
+              <View style={{ flexDirection: 'row', justifyContent: 'space-around', marginTop: 24 }}>
+                <IconButton
+                  icon="thumb-down"
+                  size={32}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleDislike();
+                  }}
+                />
+                <IconButton
+                  icon="thumb-up"
+                  size={32}
+                  onPress={(e) => {
+                    e.stopPropagation();
+                    handleLike();
+                  }}
+                />
+              </View>
+            </View>
+          ) : (
+            <View style={{ padding: 16 }}>
+              <Text style={{ fontSize: 22, fontWeight: 'bold' }}>
+                {currentProfile.displayName}, {currentProfile.age}
+              </Text>
+            </View>
+          )}
+        </TouchableOpacity>
       ) : (
-        <Swiper
-          ref={swiperRef}
-          cards={profiles}
-          renderCard={(user: PublicUserProfile & { distanceKm: number }) =>
-            user ? <ProfileCard profile={user} /> : (
-              <View style={styles.card}><Text>No more profiles</Text></View>
-            )
-          }
-          onSwipedRight={(i: number) => handleSwipe(i, true)}
-          onSwipedLeft={(i: number) => handleSwipe(i, false)}
-          backgroundColor="#fff"
-          stackSize={3}
-          cardIndex={0}
-        />
+        <View style={{ flex: 1, justifyContent: 'center', alignItems: 'center' }}>
+          <Text>No more users to show.</Text>
+        </View>
       )}
-
-      <Modal isVisible={matchedModalVisible}>
-        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10, alignItems: 'center' }}>
-          <Text style={{ fontSize: 24, fontWeight: 'bold', marginBottom: 10 }}>🎉 It's a Match!</Text>
-          {matchedUser && <Text>You and {matchedUser.displayName || matchedUser.uid} liked each other!</Text>}
-          <Button mode="contained" onPress={() => setMatchedModalVisible(false)} style={{ marginTop: 15 }}>
-            Close
-          </Button>
-        </View>
-      </Modal>
-
-      <Modal isVisible={showPreferencesModal} onBackdropPress={() => setShowPreferencesModal(false)}>
-        <View style={{ backgroundColor: 'white', padding: 20, borderRadius: 10 }}>
-          <Text style={{ fontWeight: 'bold', marginBottom: 10 }}>Match Preferences</Text>
-
-          <DropDown
-            label="Preferred Gender"
-            mode="outlined"
-            visible={showGenderDropdown}
-            showDropDown={() => setShowGenderDropdown(true)}
-            onDismiss={() => setShowGenderDropdown(false)}
-            value={matchPreferences.gender}
-            setValue={(val: string) => setMatchPreferences((prev) => ({ ...prev, gender: val }))}
-            list={[
-              { label: 'Any', value: 'any' },
-              { label: 'Male', value: 'male' },
-              { label: 'Female', value: 'female' },
-              { label: 'Non-binary', value: 'non-binary' },
-            ]}
-          />
-
-          <TextInput
-            label="Min Age"
-            keyboardType="numeric"
-            value={String(matchPreferences.minAge)}
-            onChangeText={(val: string) => setMatchPreferences((prev) => ({ ...prev, minAge: parseInt(val) || 18 }))}
-            style={{ marginBottom: 10 }}
-          />
-
-          <TextInput
-            label="Max Age"
-            keyboardType="numeric"
-            value={String(matchPreferences.maxAge)}
-            onChangeText={(val: string) => setMatchPreferences((prev) => ({ ...prev, maxAge: parseInt(val) || 100 }))}
-            style={{ marginBottom: 20 }}
-          />
-
-          <Button
-            mode="contained"
-            onPress={async () => {
-              if (!currentUser) return;
-              await firestore().collection('users').doc(currentUser.uid).update({ matchPreferences });
-              setShowPreferencesModal(false);
-            }}
-          >
-            Save Preferences
-          </Button>
-        </View>
-      </Modal>
-    </SafeAreaView>
+    </View>
   );
 };
-
-const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-    backgroundColor: '#fff',
-    alignItems: 'center',
-    justifyContent: 'center',
-  },
-  card: {
-    width: width * 0.9,
-    height: 500,
-    borderRadius: 20,
-    padding: 20,
-    backgroundColor: '#F3F4F6'
-  }
-});
-
 export default MatchingScreen;

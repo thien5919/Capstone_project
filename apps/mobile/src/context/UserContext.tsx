@@ -25,34 +25,31 @@ export const UserProvider: React.FC<{ children: React.ReactNode }> = ({ children
   const [error, setError] = useState<string | null>(null);
 
   const refreshUserProfile = async () => {
-    setLoading(true);
-    setError(null);
     try {
-      const user = auth().currentUser;
-      if (!user) throw new Error('No authenticated user');
+      const profile = await api.getProfile();
   
-      const idToken = await user.getIdToken(true); // ✅ force refresh
-      const profile = await api.getProfile(idToken);
+      if (profile.created) {
+        console.log('⚠️ Profile was just created. Skip setting userProfile.');
+        setLoading(false); 
+        return;
+      }
   
-      console.log('📦 Loaded user profile from API:', JSON.stringify(profile, null, 2));
-      console.log('🔥 Firebase ID Token:', idToken);
-
-  
+      console.log('✅ Loaded user profile:', profile);
       setUserProfile(profile);
-    } catch (err: any) {
-      setError(err.message || 'Failed to load profile');
-      setUserProfile(null);
+    } catch (error) {
+      console.error('❌ Failed to fetch user profile:', error);
+      setError((error as any).message ?? 'Unknown error'); // thêm nếu muốn
     } finally {
-      setLoading(false);
+      setLoading(false); // 👈 cái này đảm bảo lúc nào cũng set loading false
     }
   };
-
+  
   const updateUserProfile = async (updates: Partial<UserProfile>) => {
     try {
       const user = auth().currentUser;
       if (!user) throw new Error('No authenticated user');
-      const idToken = await user.getIdToken();
-      await api.updateProfile(idToken, updates);
+      
+      await api.updateProfile(updates); 
       await refreshUserProfile();
     } catch (err) {
       console.error('Failed to update profile:', err);

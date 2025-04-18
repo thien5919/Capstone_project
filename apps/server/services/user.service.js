@@ -1,30 +1,60 @@
 const { firestore } = require('../firebase');
+const haversine = require('haversine-distance');
 
-exports.updateUserToken = async (uid, fcmToken) => {
-  return await firestore.collection('users').doc(uid).update({ fcmToken });
-};
+exports.getNearbyUsers = async (uid) => {
+  const currentUserRef = firestore.collection('users').doc(uid);
+  const currentUserSnap = await currentUserRef.get();
 
-exports.getUserProfile = async (uid) => {
-  console.log('🔍 Fetching profile for UID:', uid);
-
-  const ref = firestore.collection('users').doc(uid);
-  const doc = await ref.get(); // ✅ Được khai báo đúng thứ tự
-
-  console.log('📦 Document exists?', doc.exists);
-
-  if (!doc.exists) {
-    console.warn('🆕 Document not found, creating profile...');
-    await ref.set({
-      createdAt: new Date(),
-      email: '',
-      name: '',
-    });
-    return { created: true, uid };
+  if (!currentUserSnap.exists) {
+    console.log('❌ User profile not found for UID:', uid);
+    throw new Error('User not found');
   }
 
-  return doc.data();
+  const currentUser = currentUserSnap.data();
+  const { location } = currentUser || {};
+
+  if (!location) {
+    console.log('❗ No location set for current user:', uid);
+    return []; // Trả empty mảng nếu user chưa setup location
+  }
+
+  const allUsersSnap = await firestore.collection('users').get();
+  const nearbyUsers = [];
+
+  allUsersSnap.forEach(doc => {
+    if (doc.id === 'nearby') return; // 🛡️ Bỏ skip document dummy `nearby`
+
+    const other = doc.data();
+    if (!other.location) return;
+    if (doc.id === uid) return; // 🛡️ Không tự match chính mình
+
+    nearbyUsers.push({ uid: doc.id, ...other });
+  });
+
+  return nearbyUsers;
 };
 
-exports.updateUserProfile = async (uid, updates) => {
-  return await firestore.collection('users').doc(uid).update(updates);
+
+
+exports.getUserProfile = async (uid) => {
+  const ref = firestore.collection('users').doc(uid);
+  const doc = await ref.get();
+
+  if (!doc.exists) {
+    throw new Error('User not found');
+  }
+
+  return { uid: doc.id, ...doc.data() };
 };
+async function createUserProfile(uid) {
+  const newProfile = {
+    uid,
+    name: '',
+    age: null,
+    gender: '',
+    bio: '',
+    location: null,
+    createdAt: new Date(),
+  };
+  await firestore.collection('users').doc(uid).set(newProfile);
+}

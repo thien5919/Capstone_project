@@ -3,6 +3,7 @@ import { View, Text, TextInput, Button, TouchableOpacity, Alert, StyleSheet } fr
 import { useNavigation } from '@react-navigation/native';
 import { useAuth } from '../../context/AuthContext';
 import auth from '@react-native-firebase/auth';
+import { saveUserLocation } from '../../services/user.service'; // 🔥 Import thêm
 
 const LoginScreen = () => {
   const navigation = useNavigation<any>();
@@ -15,15 +16,18 @@ const LoginScreen = () => {
     if (!email || !password) {
       return Alert.alert('Notice', 'Please enter both email and password.');
     }
-
+  
     try {
       await auth().signInWithEmailAndPassword(email.trim(), password);
-      // No manual navigation: AuthContext + RootNavigator handles this
+      const currentUser = auth().currentUser;
+      if (currentUser) {
+        await saveUserLocation(currentUser.uid); 
+      }
     } catch (error: any) {
       Alert.alert('Login Failed', error.message);
     }
   };
-
+  
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Login</Text>

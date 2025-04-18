@@ -1,122 +1,160 @@
-import React from 'react';
-import { View, Text, StyleSheet, Button, ActivityIndicator, ScrollView, Image } from 'react-native';
+import React, { useEffect, useState } from 'react';
+import { View, StyleSheet, ScrollView, Alert } from 'react-native';
+import { TextInput, Button, ActivityIndicator, Text, Card, Divider } from 'react-native-paper';
 import { useUser } from '../../context/UserContext';
-import { useAuth } from '../../context/AuthContext';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import auth from '@react-native-firebase/auth';
+import { useNavigation } from '@react-navigation/native';
 
 const ProfileScreen = () => {
-  const { userProfile, loading, error } = useUser();
-  const { logoutUser } = useAuth();
+  const { userProfile, refreshUserProfile, updateUserProfile, loading } = useUser();
+  const navigation = useNavigation<any>();
+
+  const [name, setName] = useState('');
+  const [bio, setBio] = useState('');
+
+  useEffect(() => {
+    refreshUserProfile();
+  }, []);
+
+  useEffect(() => {
+    if (userProfile) {
+      setName(userProfile.displayName || '');
+      setBio(userProfile.description || '');
+    }
+  }, [userProfile]);
+
+  const handleUpdate = async () => {
+    await updateUserProfile({ displayName: name, description: bio });
+    alert('✅ Profile updated successfully!');
+  };
+
+  const handleLogout = async () => {
+    try {
+      await auth().signOut();
+      Alert.alert('Logged Out', 'You have been logged out successfully.');
+      navigation.reset({
+        index: 0,
+        routes: [{ name: 'Login' }],
+      });
+    } catch (error) {
+      console.error('Logout error:', error);
+      Alert.alert('Error', 'Failed to log out.');
+    }
+  };
+
+  if (loading) {
+    return (
+      <View style={styles.center}>
+        <ActivityIndicator animating={true} size="large" />
+      </View>
+    );
+  }
+
+  if (!userProfile) {
+    return (
+      <View style={styles.center}>
+        <Text variant="titleMedium" style={{ color: 'red' }}>
+          No profile found. Please login.
+        </Text>
+      </View>
+    );
+  }
 
   return (
-    <SafeAreaView style={styles.fullscreen}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
-        {loading ? (
-          <View style={styles.centered}>
-            <ActivityIndicator size="large" color="#10B981" />
-            <Text style={{ marginTop: 12 }}>Loading profile...</Text>
-          </View>
-        ) : error ? (
-          <View style={styles.centered}>
-            <Text style={{ color: 'red' }}>{error}</Text>
-          </View>
-        ) : userProfile ? (
-          <View style={styles.profileContainer}>
-            {/* Avatar hình tròn */}
-            <Image
-              source={{ uri: userProfile.photoUrl || 'https://via.placeholder.com/150' }}
-              style={styles.avatar}
-            />
-            <Text style={styles.name}>
-              {userProfile.displayName || 'User'}, {userProfile.age || 'N/A'}
-            </Text>
-            <Text style={styles.gender}>{userProfile.gender || 'N/A'}</Text>
+    <ScrollView contentContainerStyle={styles.container}>
+      <Card style={styles.card}>
+        <Card.Title title="User Details" titleStyle={styles.title} />
+        <Card.Content>
+          <Text style={styles.detailItem}>👤 Name: {userProfile.displayName || 'N/A'}</Text>
+          <Text style={styles.detailItem}>📧 Email: {userProfile.email || 'N/A'}</Text>
+          <Text style={styles.detailItem}>🎂 Age: {userProfile.age ?? 'N/A'}</Text>
+          <Text style={styles.detailItem}>🚻 Gender: {userProfile.gender || 'N/A'}</Text>
+          
+          
+        </Card.Content>
+      </Card>
 
-            {/* Thông tin chi tiết */}
-            <View style={styles.details}>
-              <Text style={styles.label}>📧 Email:</Text>
-              <Text style={styles.value}>{userProfile.email || 'N/A'}</Text>
+      <Divider style={{ marginVertical: 20 }} />
 
-              <Text style={styles.label}>📝 Bio:</Text>
-              <Text style={styles.value}>{userProfile.description || 'N/A'}</Text>
-            </View>
-          </View>
-        ) : (
-          <View style={styles.centered}>
-            <Text>Profile not found.</Text>
-          </View>
-        )}
+      <Card style={styles.card}>
+        <Card.Title title="Edit Profile" titleStyle={styles.title} />
+        <Card.Content>
+          <TextInput
+            label="Name"
+            value={name}
+            onChangeText={setName}
+            mode="outlined"
+            style={styles.input}
+            placeholder="Your name"
+          />
+          <TextInput
+            label="Bio"
+            value={bio}
+            onChangeText={setBio}
+            mode="outlined"
+            placeholder="Tell something about yourself..."
+            multiline
+            numberOfLines={4}
+            style={[styles.input, { height: 100 }]}
+          />
+          <Button
+            mode="contained"
+            onPress={handleUpdate}
+            style={styles.button}
+            contentStyle={{ paddingVertical: 6 }}
+          >
+            Save Changes
+          </Button>
 
-        <View style={styles.spacer} />
-      </ScrollView>
-
-      <View style={styles.logoutContainer}>
-        <Button title="Log Out" color="#EF4444" onPress={logoutUser} />
-      </View>
-    </SafeAreaView>
+          <Button
+            mode="outlined"
+            onPress={handleLogout}
+            style={[styles.button, { marginTop: 10, backgroundColor: '#ffdddd' }]}
+            textColor="red"
+            contentStyle={{ paddingVertical: 6 }}
+          >
+            Logout
+          </Button>
+        </Card.Content>
+      </Card>
+    </ScrollView>
   );
 };
 
+export default ProfileScreen;
+
 const styles = StyleSheet.create({
-  fullscreen: {
-    flex: 1,
-    backgroundColor: '#fff',
-  },
-  scrollContent: {
-    padding: 20,
+  container: {
     flexGrow: 1,
-    alignItems: 'center',
-  },
-  profileContainer: {
-    alignItems: 'center',
-    marginTop: 30,
-  },
-  avatar: {
-    width: 120,
-    height: 120,
-    borderRadius: 60, // hình tròn
-    marginBottom: 16,
-    backgroundColor: '#e5e7eb',
-  },
-  name: {
-    fontSize: 24,
-    fontWeight: '700',
-    marginBottom: 4,
-  },
-  gender: {
-    fontSize: 16,
-    color: '#6B7280',
-    marginBottom: 16,
-  },
-  details: {
-    width: '100%',
-    paddingHorizontal: 10,
-  },
-  label: {
-    fontWeight: '600',
-    fontSize: 14,
-    marginTop: 10,
-    color: '#374151',
-  },
-  value: {
-    fontSize: 16,
-    marginBottom: 10,
-    color: '#111827',
-  },
-  centered: {
-    alignItems: 'center',
     justifyContent: 'center',
-    marginTop: 40,
+    padding: 20,
+    backgroundColor: '#f4f4f5',
   },
-  spacer: {
-    height: 100,
+  center: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
+    padding: 20,
   },
-  logoutContainer: {
-    borderTopWidth: 1,
-    borderColor: '#E5E7EB',
-    padding: 16,
-    backgroundColor: '#fff',
+  card: {
+    borderRadius: 16,
+    paddingVertical: 20,
+    marginBottom: 10,
+  },
+  title: {
+    textAlign: 'center',
+    fontWeight: 'bold',
+    fontSize: 22,
+  },
+  input: {
+    marginVertical: 10,
+  },
+  button: {
+    marginTop: 20,
+    borderRadius: 8,
+  },
+  detailItem: {
+    fontSize: 16,
+    marginBottom: 8,
   },
 });
-
-export default ProfileScreen;

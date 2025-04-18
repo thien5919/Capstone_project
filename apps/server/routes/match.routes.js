@@ -1,6 +1,12 @@
 const express = require('express');
 const router = express.Router();
-const { swipeUser, checkMatch, getMatchesForUser } = require('../services/match.service');
+const {
+  swipeUser,
+  checkMatch,
+  getMatchesForUser,
+  getPendingMatchesForUser, 
+} = require('../services/match.service');
+
 const verifyFirebaseToken = require('../middlewares/auth.middleware');
 
 router.use(verifyFirebaseToken);
@@ -45,6 +51,19 @@ router.get('/me', async (req, res) => {
     res.status(500).json({ success: false, error: err.message });
   }
 });
+// GET /api/match/pending
+router.get('/pending', async (req, res) => {
+  const uid = req.user.uid;
+
+  try {
+    const pendingMatches = await getPendingMatchesForUser(uid);
+    res.status(200).json({ success: true, pendingMatches });
+  } catch (err) {
+    res.status(500).json({ success: false, error: err.message });
+  }
+});
+
+
 
 
 module.exports = router;
